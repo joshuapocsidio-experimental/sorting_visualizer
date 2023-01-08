@@ -63,7 +63,7 @@ class MergeSort extends SortParentClass {
     List<int> rightArray = await _mergeRecurse(array.sublist(mid, array.length), temp, origLeftIndex + mid, origRightIndex);
     // Merge
     List<int> mergedArray = await _merge(leftArray, rightArray, temp, origLeftIndex, origRightIndex);
-    if(origLeftIndex < origRightIndex) {
+    if(origLeftIndex <= origRightIndex) {
       for(int mInt in mergedArray) {
         List<int> sList = temp.sublist(origLeftIndex, origRightIndex);
         if(sList.contains(mInt)) {

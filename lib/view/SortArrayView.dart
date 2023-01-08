@@ -268,43 +268,47 @@ class _SortArrayViewState extends State<SortArrayView> implements SortUIObserver
                   indent: 50,
                   endIndent: 50,
                 ),
-                SortController.instance.sortChoice == SortChoice.Merge ? Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: SingleChildScrollView(
-                    child: GridView.builder(
-                        scrollDirection: Axis.vertical,
-                        physics: ScrollPhysics(),
-                        controller: sortedArrayController,
-                        shrinkWrap: true,
-                        itemCount: widget.sortedArray.length,
-                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          maxCrossAxisExtent: 20,
+                Expanded(
+                  child: SortController.instance.sortChoice == SortChoice.Merge ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: CustomScrollView(
+                      scrollDirection: Axis.vertical,
+                      shrinkWrap: true,
+                      slivers: [
+                        SliverGrid(
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              crossAxisCount: 20
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                                (BuildContext context, int index) {
+                              return AnimatedContainer(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.blueGrey,
+                                  ),
+                                  color: _getGridElementColour(index),
+                                ),
+                                duration: Duration(milliseconds: index * 50),
+                                child: SizedBox(
+                                  width: 10,
+                                  height: 10,
+                                  child: Center(
+                                    child: Text("${widget.outPlaceArray[index]}"),
+                                  ),
+                                ),
+                              );
+                            },
+                            childCount: widget.outPlaceArray.length,
+                          ),
                         ),
-                        itemBuilder: (context, index){
-                          return AnimatedContainer(
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: Colors.blueGrey,
-                              ),
-                              color: _getGridElementColour(index),
-                            ),
-                            duration: widget.isSorting == true ? Duration(milliseconds: 200) : Duration(milliseconds: index * 50),
-                            child: SizedBox(
-                              width: 10,
-                              height: 10,
-                              child: Center(
-                                child: Text("${widget.sortedArray[index]}"),
-                              ),
-                            ),
-                          );
-                        }
+                      ],
                     ),
+                  ) : Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Text("Only applicable for: Merge Sort"),
                   ),
-                ) : Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Text("Only applicable for: Merge Sort"),
                 ),
                 Divider(
                   thickness: 2,

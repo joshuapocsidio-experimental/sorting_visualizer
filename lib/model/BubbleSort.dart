@@ -37,24 +37,24 @@ class BubbleSort extends SortParentClass {
   @override
   Future<List<int>> sort(List<int> unsortedArray) async {
     int numSwaps;
-    int sortedIndex = -1;
+    int sortedIndex = unsortedArray.length;
 
     do {
       numSwaps = 0;
-      for(int i = 0; i < unsortedArray.length - 1 && SortController.instance.isSorting; i++) {
+      for(int i = 0; i < sortedIndex - 1 && SortController.instance.isSorting; i++) {
         if(unsortedArray[i] > unsortedArray[i+1]) {
           int temp = unsortedArray[i+1];
           unsortedArray[i+1] = unsortedArray[i];
           unsortedArray[i] = temp;
           numSwaps++;
-          sortedIndex = i + 1;
-          await Future.delayed(Duration(milliseconds: super.speed), () {
-            aIndex = i;
-            bIndex = i+1;
-            notifyObservers();
-          });
         }
+        await Future.delayed(Duration(milliseconds: super.speed), () {
+          aIndex = i;
+          bIndex = i+1;
+          notifyObservers();
+        });
       }
+      sortedIndex--;
       await Future.delayed(Duration(milliseconds: super.speed * 3), () {
         if(sortedIndices.contains(sortedIndex) == false) {
           sortedIndices.add(sortedIndex);

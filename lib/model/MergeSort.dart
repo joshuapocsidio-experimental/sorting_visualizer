@@ -4,31 +4,38 @@ import 'package:sorting_visualizer/model/SortObserver.dart';
 
 class MergeSort extends SortParentClass {
 
-  late List<MergeSortObserver> _obs;
+  late List<SortViewObserver> _obs;
+  late int leftIndex, rightIndex;
 
   MergeSort(int speed) : super(speed)  {
     _obs = [];
+    _init();
   }
 
-  void addObserver(MergeSortObserver ob) {
+  void addObserver(SortViewObserver ob) {
     this._obs.add(ob);
   }
-  void removeObserver(MergeSortObserver ob) {
+  void removeObserver(SortViewObserver ob) {
     this._obs.remove(ob);
   }
   void clearObservers() {
     _obs = [];
   }
 
-  void notifyOutPlaceObservers(List<int> array, int left, int right) {
-    for(MergeSortObserver ob in _obs){
-      ob.updateMergeOutPlace(array, left, right);
+  void notifyOutPlaceObservers(List<int> array) {
+    for(SortViewObserver ob in _obs){
+      ob.updateOutPlace(array);
     }
   }
   void notifyInPlaceObservers(List<int> array) {
-    for(MergeSortObserver ob in _obs){
-      ob.updateMergeInPlace(array);
+    for(SortViewObserver ob in _obs){
+      ob.updateInPlace(array);
     }
+  }
+
+  void _init(){
+    leftIndex = -1;
+    rightIndex = -1;
   }
 
   @override
@@ -38,8 +45,9 @@ class MergeSort extends SortParentClass {
     List<int> sortedArray = await _mergeRecurse(newArray, temp, 0, unsortedArray.length-1);
     await Future.delayed(Duration(milliseconds: super.speed), () {
       temp = List.filled(unsortedArray.length, 0);
-      notifyOutPlaceObservers(temp, 0, unsortedArray.length);
+      notifyOutPlaceObservers(temp);
     });
+    _init();
     return sortedArray;
   }
 
@@ -89,14 +97,18 @@ class MergeSort extends SortParentClass {
         right++;
       }
       await Future.delayed(Duration(milliseconds: super.speed), () {
-        notifyOutPlaceObservers(temp, origLeftIndex, origRightIndex);
+        leftIndex = origLeftIndex;
+        rightIndex = origRightIndex;
+        notifyOutPlaceObservers(temp);
       });
     }
     while(left < leftArray.length) {
       outArray.add(leftArray[left]);
       temp[origLeftIndex + left + right] = leftArray[left];
       await Future.delayed(Duration(milliseconds: super.speed), () {
-        notifyOutPlaceObservers(temp, origLeftIndex, origRightIndex);
+        leftIndex = origLeftIndex;
+        rightIndex = origRightIndex;
+        notifyOutPlaceObservers(temp);
       });
       left++;
     }
@@ -104,7 +116,9 @@ class MergeSort extends SortParentClass {
       outArray.add(rightArray[right]);
       temp[origLeftIndex + left + right] = rightArray[right];
       await Future.delayed(Duration(milliseconds: super.speed), () {
-        notifyOutPlaceObservers(temp, origLeftIndex, origRightIndex);
+        leftIndex = origLeftIndex;
+        rightIndex = origRightIndex;
+        notifyOutPlaceObservers(temp);
       });
       right++;
     }

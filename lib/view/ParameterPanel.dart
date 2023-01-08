@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sorting_visualizer/controller/SortController.dart';
-import 'package:sorting_visualizer/widgets/InputField.dart';
+import 'package:sorting_visualizer/model/QuickSort.dart';
+import 'package:sorting_visualizer/widgets/SizeInputField.dart';
 import 'package:sorting_visualizer/model/SortClass.dart';
 import 'package:sorting_visualizer/widgets/SorterCustomButton.dart';
 
@@ -18,6 +19,7 @@ class _ParameterPanelState extends State<ParameterPanel> {
   bool submitEnable = true;
   bool showOriginal = true;
   bool showOutPlaceArray = true;
+  late PivotSelection quickSortPivotSelection;
 
   late String _speedMode;
   late int _arraySize;
@@ -43,21 +45,21 @@ class _ParameterPanelState extends State<ParameterPanel> {
                 Icons.circle,
                 color: Colors.blue,
               ),
-              title: Text("Comparison A Index"),
+              title: Text("Comparison A Index", style: TextStyle(fontSize: 16),),
             ),
             ListTile(
               leading: Icon(
                 Icons.circle,
                 color: Colors.red,
               ),
-              title: Text("Comparison B Index"),
+              title: Text("Comparison B Index", style: TextStyle(fontSize: 16),),
             ),
             ListTile(
               leading: Icon(
                 Icons.circle,
                 color: Colors.purple,
               ),
-              title: Text("Iteration Index"),
+              title: Text("Iteration Index", style: TextStyle(fontSize: 16),),
             ),
           ]);
           break;
@@ -68,14 +70,14 @@ class _ParameterPanelState extends State<ParameterPanel> {
                 Icons.circle,
                 color: Colors.red,
               ),
-              title: Text("Comparison Index"),
+              title: Text("Comparison Index", style: TextStyle(fontSize: 16),),
             ),
             ListTile(
               leading: Icon(
                 Icons.circle,
                 color: Colors.purple,
               ),
-              title: Text("Iteration Index"),
+              title: Text("Iteration Index", style: TextStyle(fontSize: 16),),
             ),
           ]);
           break;
@@ -86,14 +88,14 @@ class _ParameterPanelState extends State<ParameterPanel> {
                 Icons.circle,
                 color: Colors.blue,
               ),
-              title: Text("Comparison A Index"),
+              title: Text("Comparison A Index", style: TextStyle(fontSize: 16),),
             ),
             ListTile(
               leading: Icon(
                 Icons.circle,
                 color: Colors.red,
               ),
-              title: Text("Comparison B Index"),
+              title: Text("Comparison B Index", style: TextStyle(fontSize: 16),),
             ),
           ]);
           break;
@@ -104,7 +106,7 @@ class _ParameterPanelState extends State<ParameterPanel> {
                 Icons.circle,
                 color: Colors.blue,
               ),
-              title: Text("Merging Dataset"),
+              title: Text("Merging Dataset", style: TextStyle(fontSize: 16),),
             ),
           ]);
           break;
@@ -115,21 +117,21 @@ class _ParameterPanelState extends State<ParameterPanel> {
                 Icons.circle,
                 color: Colors.purple,
               ),
-              title: Text("Pivot"),
+              title: Text("Pivot", style: TextStyle(fontSize: 16),),
             ),
             ListTile(
               leading: Icon(
                 Icons.circle,
                 color: Colors.blue,
               ),
-              title: Text("Comparison Left Index"),
+              title: Text("Comparison Left Index", style: TextStyle(fontSize: 16),),
             ),
             ListTile(
               leading: Icon(
                 Icons.circle,
                 color: Colors.red,
               ),
-              title: Text("Comparison Right Index"),
+              title: Text("Comparison Right Index", style: TextStyle(fontSize: 16),),
             ),
           ]);
           break;
@@ -146,7 +148,7 @@ class _ParameterPanelState extends State<ParameterPanel> {
           Icons.circle_outlined,
           color: Colors.blueGrey,
         ),
-        title: Text("Unsorted Values"),
+        title: Text("Unsorted Values", style: TextStyle(fontSize: 16),),
       ),
     );
     legend.add(
@@ -155,7 +157,7 @@ class _ParameterPanelState extends State<ParameterPanel> {
           Icons.circle,
           color: Colors.green.withOpacity(0.7),
         ),
-        title: Text("Sorted Values"),
+        title: Text("Sorted Values", style: TextStyle(fontSize: 16),),
       ),
     );
     return Column(
@@ -188,6 +190,7 @@ class _ParameterPanelState extends State<ParameterPanel> {
     _arraySizeController.text = _arraySize.toString();
     _speedMode = "Normal";
     SortController.instance.changeSpeed(SortSpeed.Normal);
+    quickSortPivotSelection = SortController.instance.quickSorter.pivotSelection;
   }
 
   @override
@@ -215,7 +218,8 @@ class _ParameterPanelState extends State<ParameterPanel> {
                 "Legend",
                 style: TextStyle(
                   color: Colors.black,
-                  fontSize: 25,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -248,7 +252,8 @@ class _ParameterPanelState extends State<ParameterPanel> {
                 "Parameters",
                 style: TextStyle(
                   color: Colors.black,
-                  fontSize: 25,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
@@ -258,8 +263,8 @@ class _ParameterPanelState extends State<ParameterPanel> {
               thickness: 1,
               color: Colors.grey,
             ),
-            InputField(
-              hint: '0 <= size <= 10,000',
+            SizeInputField(
+              hint: '0 <= size <= 1,000',
               updateCallback: _updatePanel,
               isNumeric: true,
               defaultInput: _arraySize.toString(),
@@ -326,9 +331,9 @@ class _ParameterPanelState extends State<ParameterPanel> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5),
                   child: Text(
-                    "Speed (ms)",
+                    "Speed",
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 16,
                     ),
                   ),
                 ),
@@ -344,6 +349,9 @@ class _ParameterPanelState extends State<ParameterPanel> {
                         value: value,
                         child: Text(
                           value,
+                          style: TextStyle(
+                            fontSize: 14,
+                          ),
                         ),
                       );
                     }).toList(),
@@ -351,6 +359,57 @@ class _ParameterPanelState extends State<ParameterPanel> {
                 ),
               ],
             ),
+            Divider(
+              indent: 5,
+              endIndent: 5,
+              thickness: 1,
+              color: Colors.grey,
+            ),
+            SortController.instance.sortChoice == SortChoice.Quick ? Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                RadioListTile(
+                  title: Text("Start Index"),
+                  value: PivotSelection.StartIndex,
+                  groupValue: SortController.instance.quickSorter.pivotSelection,
+                  onChanged: (pivotSelectionChoice){
+                    setState(() {
+                      SortController.instance.quickSorter.pivotSelection = pivotSelectionChoice as PivotSelection;
+                    });
+                  },
+                ),
+                RadioListTile(
+                  title: Text("End Index"),
+                  value: PivotSelection.EndIndex,
+                  groupValue: SortController.instance.quickSorter.pivotSelection,
+                  onChanged: (pivotSelectionChoice){
+                    setState(() {
+                      SortController.instance.quickSorter.pivotSelection = pivotSelectionChoice as PivotSelection;
+                    });
+                  },
+                ),
+                RadioListTile(
+                  title: Text("Random Index"),
+                  value: PivotSelection.Random,
+                  groupValue: SortController.instance.quickSorter.pivotSelection,
+                  onChanged: (pivotSelectionChoice){
+                    setState(() {
+                      SortController.instance.quickSorter.pivotSelection = pivotSelectionChoice as PivotSelection;
+                    });
+                  },
+                ),
+                RadioListTile(
+                  title: Text("Median of Three Index"),
+                  value: PivotSelection.MedianOf3,
+                  groupValue: SortController.instance.quickSorter.pivotSelection,
+                  onChanged: (pivotSelectionChoice){
+                    setState(() {
+                      SortController.instance.quickSorter.pivotSelection = pivotSelectionChoice as PivotSelection;
+                    });
+                  },
+                ),
+              ],
+            ) : Container(),
             Divider(
               indent: 5,
               endIndent: 5,

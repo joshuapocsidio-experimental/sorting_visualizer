@@ -40,85 +40,88 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Row(
-        children: [
-          Card(
-            elevation: 10,
-            child: IntrinsicWidth(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(50.0),
-                      child: Container(
-                        child: SortController.instance.isSorting ? GlowingProgressIndicator(
-                          duration: Duration(milliseconds: 750),
-                          child: Icon(
+      body: Container(
+        color: Colors.grey.withOpacity(0.3),
+        child: Row(
+          children: [
+            Card(
+              elevation: 10,
+              child: IntrinsicWidth(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(50.0),
+                        child: Container(
+                          child: SortController.instance.isSorting ? GlowingProgressIndicator(
+                            duration: Duration(milliseconds: 750),
+                            child: Icon(
+                              Icons.graphic_eq_sharp,
+                              color: Colors.blue,
+                              size: 250,
+                            ),
+                          ) : Icon(
                             Icons.graphic_eq_sharp,
-                            color: Colors.blue,
                             size: 250,
                           ),
-                        ) : Icon(
-                          Icons.graphic_eq_sharp,
-                          size: 250,
                         ),
                       ),
                     ),
-                  ),
-                  Center(
-                    child: Text(
-                      "Sorting Algorithms",
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontSize: 25,
+                    Center(
+                      child: Text(
+                        "Sorting Visualiser",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 20,
+                        ),
                       ),
                     ),
-                  ),
-                  Divider(
-                    indent: 5,
-                    endIndent: 5,
-                    thickness: 1,
-                    color: Colors.grey,
-                  ),
-                  DrawerButtonListView(
-                    enable: !SortController.instance.isSorting,
-                    startingIndex: 0,
-                    onTapFunctions: [
-                      () {
-                        SortController.instance.changeSortChoice(SortChoice.Insertion);
-                      },
-                      () {
-                        SortController.instance.changeSortChoice(SortChoice.Selection);
-                      },
-                      () {
-                        SortController.instance.changeSortChoice(SortChoice.Merge);
-                      },
-                      () {
-                        SortController.instance.changeSortChoice(SortChoice.Quick);
-                      },
-                      () {
-                        SortController.instance.changeSortChoice(SortChoice.Bubble);
-                      },
-                    ],
-                    titles: [
-                      "Insertion Sort",
-                      "Selection Sort",
-                      "Merge Sort",
-                      "Quick Sort",
-                      "Bubble Sort",
-                    ],
-                  ),
-                ],
+                    Divider(
+                      indent: 5,
+                      endIndent: 5,
+                      thickness: 1,
+                      color: Colors.grey,
+                    ),
+                    DrawerButtonListView(
+                      enable: !SortController.instance.isSorting,
+                      startingIndex: 0,
+                      onTapFunctions: [
+                        () {
+                          SortController.instance.changeSortChoice(SortChoice.Insertion);
+                        },
+                        () {
+                          SortController.instance.changeSortChoice(SortChoice.Selection);
+                        },
+                        () {
+                          SortController.instance.changeSortChoice(SortChoice.Merge);
+                        },
+                        () {
+                          SortController.instance.changeSortChoice(SortChoice.Quick);
+                        },
+                        () {
+                          SortController.instance.changeSortChoice(SortChoice.Bubble);
+                        },
+                      ],
+                      titles: [
+                        "Insertion Sort",
+                        "Selection Sort",
+                        "Merge Sort",
+                        "Quick Sort",
+                        "Bubble Sort",
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          Expanded(
-              flex: 4,
-              child: SortPage(),
-          ),
-        ],
+            Expanded(
+                flex: 4,
+                child: SortPage(),
+            ),
+          ],
+        ),
       ),
     );
   }

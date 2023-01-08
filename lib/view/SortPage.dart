@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:sorting_visualizer/controller/SortController.dart';
@@ -17,9 +18,7 @@ class SortPage extends StatefulWidget {
 
 enum VisualType {
  ArrayView,
- StackView,
- QueueView,
- HistogramView,
+ GraphView,
 }
 
 class _SortPageState extends State<SortPage> implements SortUIObserver {
@@ -65,7 +64,7 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
     // Stop timer
     sw.stop();
     t.cancel();
-    isSorted = SortController.instance.isSorted(_sortedArray);
+    isSorted = SortController.instance.checkIfSorted(_sortedArray);
     // Update GUI
     setState(()  {
       isSorting = false;
@@ -78,7 +77,7 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
       t.cancel();
       sw.stop();
       SortController.instance.stop();
-      isSorted = SortController.instance.isSorted(_sortedArray);
+      isSorted = SortController.instance.checkIfSorted(_sortedArray);
     });
   }
 
@@ -136,6 +135,12 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
   }
 
   @override
+  void deactivate() {
+    SortController.instance.removeUIObserver(this);
+    super.deactivate();
+  }
+
+  @override
   void initState() {
     super.initState();
     _unsortedArray = List.filled(20, 0, growable: true);
@@ -144,165 +149,199 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
     generateArray();
     _sortedArray = _unsortedArray.toList();
     outPlaceData = List.filled(_unsortedArray.length, 0, growable: true);
-    visualType = VisualType.ArrayView;
+    visualType = VisualType.GraphView;
+    
+    SortController.instance.addUIObserver(this);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Row(
-        children: [
-          Expanded(
-            flex: 5,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 100, top: 100, bottom: 25),
-                  child: Container(
-                    child: Text(
-                      sortMap[SortController.instance.sortChoice]!,
-                      style: TextStyle(
-                        fontSize: 50,
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 100),
-                  child: Text(
-                      _elapsed.toString(),
-                      style: TextStyle(
-                        fontSize: 20,
-                      )
-                  ),
-                ),
-                Divider(
-                  thickness: 2,
-                  indent: 50,
-                  endIndent: 50,
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 100),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
+    return Row(
+      children: [
+        Expanded(
+          flex: 5,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Card(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Text("Array"),
-                          Radio(
-                            value: VisualType.ArrayView,
-                            groupValue: visualType,
-                            onChanged: (VisualType? type){
-                              setState(() {
-                                if(!isSorting){
-                                  visualType = type!;
-                                }
-                              });
-                            },
-                          ),
-                        ],
+                      Padding(
+                        padding: const EdgeInsets.only(left: 100, top: 100, bottom: 25),
+                        child: Row(
+                          children: [
+                            Container(
+                              child: Text(
+                                sortMap[SortController.instance.sortChoice]!,
+                                style: TextStyle(
+                                  fontSize: 50,
+                                ),
+                              ),
+                            ),
+                            Tooltip(
+                              message: 'This visualiser is not optimised for visualising sorting algorithms in array format. Reduced performance is expected when sorting in array visualisation.',
+                              textStyle: TextStyle(
+                                fontSize: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                border: Border.all(
+                                  width: 0.5,
+                                  color: Colors.blue,
+                                ),
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(8),
+                                )
+                              ),
+                              child: Icon(Icons.info_outline, size: 20, color: Colors.blueGrey,),
+                            ),
+                          ],
+                        ),
                       ),
-                      Row(
-                        children: [
-                          Text("Graph"),
-                          Radio(
-                            value: VisualType.StackView,
-                            groupValue: visualType,
-                            onChanged: (VisualType? type){
-                              setState(() {
-                                if(!isSorting){
-                                  visualType = type!;
-                                }
-                              });
-                            },
+                      Padding(
+                        padding: const EdgeInsets.only(left: 100),
+                        child: Tooltip(
+                          message: 'hh/mm/ss/ms',
+                          textStyle: TextStyle(
+                            fontSize: 12,
                           ),
-                        ],
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              border: Border.all(
+                                width: 0.5,
+                                color: Colors.blue,
+                              ),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(8),
+                              )
+                          ),
+                          child: Text(
+                              _elapsed.toString(),
+                              style: TextStyle(
+                                fontSize: 20,
+                              )
+                          ),
+                        ),
+                      ),
+                      Divider(
+                        thickness: 2,
+                        indent: 50,
+                        endIndent: 50,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 100),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text("Graph"),
+                                Radio(
+                                  value: VisualType.GraphView,
+                                  groupValue: visualType,
+                                  onChanged: (VisualType? type){
+                                    setState(() {
+                                      visualType = type!;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                Text("Array"),
+                                Radio(
+                                  value: VisualType.ArrayView,
+                                  groupValue: visualType,
+                                  onChanged: (VisualType? type){
+                                    setState(() {
+                                      visualType = type!;
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 80),
+                        child: ButtonBar(
+                          buttonPadding: EdgeInsets.all(10),
+                          alignment: MainAxisAlignment.start,
+                          children: [
+                            SorterCustomButton(
+                                enable: !SortController.instance.isSorting,
+                                buttonColor: Colors.blue,
+                                label: "Sort",
+                                callback: () async {
+                                  await sort();
+                                }
+                            ),
+                            SorterCustomButton(
+                                enable: SortController.instance.isSorting,
+                                buttonColor: Colors.redAccent,
+                                label: "Stop",
+                                callback: () {
+                                  stop();
+                                }
+                            ),
+                            SorterCustomButton(
+                                enable: !SortController.instance.isSorting,
+                                buttonColor: Colors.orangeAccent,
+                                label: "Reset",
+                                callback: () {
+                                  reset();
+                                }
+                            ),
+                            SorterCustomButton(
+                                enable: !SortController.instance.isSorting,
+                                buttonColor: Colors.blue,
+                                label: "Auto Generate",
+                                callback: () {
+                                  generateArray();
+                                }
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 80),
-                  child: ButtonBar(
-                    buttonPadding: EdgeInsets.all(10),
-                    alignment: MainAxisAlignment.start,
-                    children: [
-                      SorterCustomButton(
-                        enable: !SortController.instance.isSorting,
-                        buttonColor: Colors.blue,
-                        label: "Sort",
-                        callback: () async {
-                          print("Sorting...");
-                          await sort();
-                        }
-                      ),
-                      SorterCustomButton(
-                        enable: SortController.instance.isSorting,
-                        buttonColor: Colors.redAccent,
-                        label: "Stop",
-                        callback: () {
-                          print("Stopping...");
-                          stop();
-                        }
-                      ),
-                      SorterCustomButton(
-                        enable: !SortController.instance.isSorting,
-                        buttonColor: Colors.orangeAccent,
-                        label: "Reset",
-                        callback: () {
-                          print("Resetting...");
-                          reset();
-                        }
-                      ),
-                      SorterCustomButton(
-                        enable: !SortController.instance.isSorting,
-                        buttonColor: Colors.blue,
-                        label: "Auto Generate",
-                        callback: () {
-                          print("Generating...");
-                          generateArray();
-                        }
-                      ),
-                    ],
-                  ),
-                ),
-                Divider(
-                  thickness: 2,
-                  indent: 50,
-                  endIndent: 50,
-                ),
-                Expanded(
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
                   child: visualType == VisualType.ArrayView ?
                   SortArrayView(
                     outPlaceArray: outPlaceData,
-                    sortedIndices: sortedIndices,
                     isSorted: isSorted,
                     isSorting: isSorting,
                     sortedArray: _sortedArray,
                     unsortedArray: _unsortedArray,
                   ) :
                   SortStackView(
-                    sortedIndices: sortedIndices,
                     isSorted: isSorted,
-                    isSorting: isSorting,
                     sortedData: _sortedArray,
                     unsortedData: _unsortedArray,
                     outPlaceData: outPlaceData,
-                  )
-                ),
-              ],
-            ),
+                  ),
+                )
+              ),
+            ],
           ),
-          Expanded(
-            flex: 1,
-            child: ParameterPanel(
-              initialArraySize: _unsortedArray.length,
-              updateArraySize: updateArraySize,
-            ),
+        ),
+        Expanded(
+          flex: 1,
+          child: ParameterPanel(
+            initialArraySize: _unsortedArray.length,
+            updateArraySize: updateArraySize,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -314,6 +353,8 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
   @override
   void updateSortChoice(SortChoice sortChoice ) {
     setState(() {
+      print("reset");
+      reset();
     });
   }
 }

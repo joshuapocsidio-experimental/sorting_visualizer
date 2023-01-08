@@ -1,29 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:sorting_visualizer/controller/SortController.dart';
+import 'package:sorting_visualizer/model/BubbleSort.dart';
+import 'package:sorting_visualizer/model/InsertionSort.dart';
+import 'package:sorting_visualizer/model/MergeSort.dart';
+import 'package:sorting_visualizer/model/QuickSort.dart';
+import 'package:sorting_visualizer/model/SelectionSort.dart';
 import 'package:sorting_visualizer/model/SortObserver.dart';
-
 class SortArrayView extends StatefulWidget {
   final List<int> sortedArray;
   final List<int> unsortedArray;
   final List<int> outPlaceArray;
   final bool isSorting;
   final bool isSorted;
-  final List<int> sortedIndices;
 
-  SortArrayView({required this.outPlaceArray, required this.sortedIndices, required this.isSorting, required this.isSorted, required this.sortedArray, required this.unsortedArray});
+  SortArrayView({required this.outPlaceArray, required this.isSorting, required this.isSorted, required this.sortedArray, required this.unsortedArray});
 
   @override
   _SortArrayViewState createState() => _SortArrayViewState();
 }
 
-class _SortArrayViewState extends State<SortArrayView> implements SortObserver, SortUIObserver {
-  int current = 0, check = 0;
-  int pivotIndex = -1;
-  int outPlaceLeftIndex = -1, outPlaceRightIndex = -1;
+class _SortArrayViewState extends State<SortArrayView> implements SortUIObserver, SortViewObserver {
   final ScrollController sortedArrayController = ScrollController();
   final ScrollController unsortedArrayController = ScrollController();
+  List<bool> isExpansionOpen = [true, true, SortController.instance.sortChoice == SortChoice.Merge ? true : false];
 
-  Color _getGridElementColour (int gridIndex, int currentIndex, int checkIndex) {
+  Color _getGridElementColour (int gridIndex) {
+    SortController controller = SortController.instance;
     // Array is already sorted
     if(widget.isSorted) {
       return Colors.green.withOpacity(0.8);
@@ -31,43 +34,60 @@ class _SortArrayViewState extends State<SortArrayView> implements SortObserver, 
     if(SortController.instance.isSorting) {
       // Selection Sort
       if(SortController.instance.sortChoice == SortChoice.Selection) {
-        if(widget.sortedIndices.contains(gridIndex)) {
+        SelectionSort sorter = controller.selectionSorter;
+        if(sorter.sortedIndices.contains(gridIndex)) {
           return Colors.green.withOpacity(0.7);
+        }
+        if(gridIndex == sorter.iterationIndex) {
+          return Colors.purple;
+        }
+        if(gridIndex == sorter.comparisonIndex) {
+          return Colors.red;
         }
       }
       // Insertion Sort
       if(SortController.instance.sortChoice == SortChoice.Insertion) {
-        if(gridIndex == currentIndex) {
+        InsertionSort sorter = controller.insertionSorter;
+        if(gridIndex == sorter.iterationIndex) {
+          return Colors.purple;
+        }
+        if(gridIndex == sorter.aIndex) {
           return Colors.blue;
         }
-        if(gridIndex == checkIndex) {
+        if(gridIndex == sorter.bIndex) {
           return Colors.red;
-        }
-        if(gridIndex == checkIndex - 1) {
-          return Colors.yellow;
         }
       }
       // Quick Sort
       if(SortController.instance.sortChoice == SortChoice.Quick) {
-        if(gridIndex == currentIndex) {
+        QuickSort sorter = controller.quickSorter;
+        if(gridIndex == sorter.left) {
+          return Colors.blue;
+        }
+        if(gridIndex == sorter.right) {
           return Colors.red;
         }
-        if(gridIndex == pivotIndex) {
+        if(gridIndex == sorter.pivotIndex) {
           return Colors.purple;
         }
       }
       // Merge Sort
       if(SortController.instance.sortChoice == SortChoice.Merge) {
-        if(gridIndex >= outPlaceLeftIndex && gridIndex <= outPlaceRightIndex) {
+        MergeSort sorter = controller.mergeSorter;
+        if(gridIndex >= sorter.leftIndex && gridIndex <= sorter.rightIndex) {
           return Colors.blue;
         }
       }
       // Bubble Sort
       if(SortController.instance.sortChoice == SortChoice.Bubble) {
-        if(gridIndex == currentIndex) {
+        BubbleSort sorter = controller.bubbleSorter;
+        if(sorter.sortedIndices.contains(gridIndex)) {
+          return Colors.green.withOpacity(0.7);
+        }
+        if(gridIndex == sorter.aIndex) {
           return Colors.blue;
         }
-        if(gridIndex == checkIndex) {
+        if(gridIndex == sorter.bIndex) {
           return Colors.red;
         }
       }
@@ -76,11 +96,10 @@ class _SortArrayViewState extends State<SortArrayView> implements SortObserver, 
   }
 
   @override
-  void dispose() {
-//    SortController.instance.removeObserver(this); // Removes currently selected sort choice when page is initialised
-    SortController.instance.removeUIObserver(this);
+  void deactivate() {
+    SortController.instance.removeUIObserver(this); // Removes currently selected sort choice when page is initialised
     SortController.instance.clearObservers();
-    super.dispose();
+    super.deactivate();
   }
 
   @override
@@ -90,199 +109,227 @@ class _SortArrayViewState extends State<SortArrayView> implements SortObserver, 
     super.initState();
   }
 
-  List<bool> isExpansionOpen = [true, true, true];
-
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Container(
-        child: ExpansionPanelList(
-          expansionCallback: (index, isOpen) {
-            setState(() {
-              isExpansionOpen[index] = !isOpen;
-            });
-          },
-          children: [
-            ExpansionPanel(
-              isExpanded: isExpansionOpen[0],
-              canTapOnHeader: true,
-              headerBuilder: (BuildContext context, bool isExpanded) {
-                return Center(child: Text("Original Array", style: TextStyle(fontSize: 25)));
-              },
-              body: Padding(
-                padding: const EdgeInsets.only(left: 20, right: 20, bottom: 50),
-                child: GridView.builder(
-                  controller: unsortedArrayController,
-                  shrinkWrap: true,
-                  itemCount: widget.unsortedArray.length,
-                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                    maxCrossAxisExtent: 50,
-                  ),
-                  itemBuilder: (context, index){
-                    return Container(
-                      constraints: BoxConstraints(
-                        maxHeight: 250,
-                        maxWidth: 250,
-                        minHeight: 100,
-                        minWidth: 100,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Colors.blueGrey,
-                        ),
-                      ),
-                      child: SizedBox(
-                        width: 10,
-                        height: 10,
-                        child: Center(
-                          child: Text("${widget.unsortedArray[index]}"),
-                        ),
-                      ),
-                    );
-                  }
-                ),
-              ),
-            ),
-            ExpansionPanel(
-              isExpanded: isExpansionOpen[1],
-              canTapOnHeader: true,
-              headerBuilder: (BuildContext context, bool isExpanded) {
-                return Center(child: Text("Output Array", style: TextStyle(fontSize: 25)));
-              },
-              body: Padding(
-                padding: const EdgeInsets.only(left: 20, right: 20, bottom: 50),
-                child: GridView.builder(
-                    controller: sortedArrayController,
-                    shrinkWrap: true,
-                    itemCount: widget.sortedArray.length,
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      maxCrossAxisExtent: 50,
-                    ),
-                    itemBuilder: (context, index){
-                      return AnimatedContainer(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.blueGrey,
-                          ),
-                          color: _getGridElementColour(index, current, check),
-                        ),
-                        duration: widget.isSorting == true ? Duration(milliseconds: 200) : Duration(milliseconds: index * 50),
-                        child: SizedBox(
-                          width: 10,
-                          height: 10,
-                          child: Center(
-                            child: Text("${widget.sortedArray[index]}"),
-                          ),
-                        ),
-                      );
-                    }
-                ),
-              ),
-            ),
-            ExpansionPanel(
-              isExpanded: isExpansionOpen[2],
-              canTapOnHeader: true,
-              headerBuilder: (BuildContext context, bool isExpanded) {
-                return Center(child: Text("Out of Place Array", style: TextStyle(fontSize: 25)));
-              },
-              body: SortController.instance.sortChoice == SortChoice.Merge ? Padding(
-                padding : const EdgeInsets.only(left: 20, right: 20, bottom: 50),
-                child: GridView.builder(
-                    controller: sortedArrayController,
-                    shrinkWrap: true,
-                    itemCount: widget.sortedArray.length,
-                    gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      maxCrossAxisExtent: 50,
-                    ),
-                    itemBuilder: (context, index){
-                      return AnimatedContainer(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.blueGrey,
-                          ),
-                          color: _getGridElementColour(index, current, check),
-                        ),
-                        duration: widget.isSorting == true ? Duration(milliseconds: 200) : Duration(milliseconds: index * 50),
-                        child: SizedBox(
-                          width: 10,
-                          height: 10,
-                          child: Center(
-                            child: Text("${widget.sortedArray[index]}"),
-                          ),
-                        ),
-                      );
-                    }
-                ),
-              ) : Container(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text("Only applicable for: Merge Sort & Quick Sort"),
+    return Column(
+      children: [
+        Expanded(
+          child: Card(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Text(
+                    "Original Array",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24,
                     ),
                   ),
+                ),
+                Divider(
+                  thickness: 2,
+                  indent: 50,
+                  endIndent: 50,
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: CustomScrollView(
+                      scrollDirection: Axis.vertical,
+                      shrinkWrap: true,
+                      slivers: [
+                        SliverGrid(
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            crossAxisCount: 20
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                                (BuildContext context, int index) {
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: Colors.blueGrey,
+                                      ),
+                                      color: Colors.white,
+                                    ),
+                                    child: SizedBox(
+                                      width: 10,
+                                      height: 10,
+                                      child: Center(
+                                        child: Text("${widget.unsortedArray[index]}"),
+                                      ),
+                                    ),
+                                  );
+                                  },
+                            childCount: widget.unsortedArray.length,
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                ),
+                Divider(
+                  thickness: 2,
+                  indent: 50,
+                  endIndent: 50,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+        Expanded(
+          child: Card(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Text(
+                    "Output Array",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24,
+                    ),
+                  ),
+                ),
+                Divider(
+                  thickness: 2,
+                  indent: 50,
+                  endIndent: 50,
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: CustomScrollView(
+                      scrollDirection: Axis.vertical,
+                      shrinkWrap: true,
+                      slivers: [
+                        SliverGrid(
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              crossAxisCount: 20
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                                (BuildContext context, int index) {
+                              return AnimatedContainer(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.blueGrey,
+                                  ),
+                                  color: _getGridElementColour(index),
+                                ),
+                                duration: Duration(milliseconds: index * 50),
+                                child: SizedBox(
+                                  width: 10,
+                                  height: 10,
+                                  child: Center(
+                                    child: Text("${widget.sortedArray[index]}"),
+                                  ),
+                                ),
+                              );
+                            },
+                            childCount: widget.sortedArray.length,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Divider(
+                  thickness: 2,
+                  indent: 50,
+                  endIndent: 50,
+                ),
+              ],
+            ),
+          ),
+        ),
+        Expanded(
+          child: Card(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Text(
+                    "Out of Place Array",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24,
+                    ),
+                  ),
+                ),
+                Divider(
+                  thickness: 2,
+                  indent: 50,
+                  endIndent: 50,
+                ),
+                SortController.instance.sortChoice == SortChoice.Merge ? Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: SingleChildScrollView(
+                    child: GridView.builder(
+                        scrollDirection: Axis.vertical,
+                        physics: ScrollPhysics(),
+                        controller: sortedArrayController,
+                        shrinkWrap: true,
+                        itemCount: widget.sortedArray.length,
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          maxCrossAxisExtent: 20,
+                        ),
+                        itemBuilder: (context, index){
+                          return AnimatedContainer(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Colors.blueGrey,
+                              ),
+                              color: _getGridElementColour(index),
+                            ),
+                            duration: widget.isSorting == true ? Duration(milliseconds: 200) : Duration(milliseconds: index * 50),
+                            child: SizedBox(
+                              width: 10,
+                              height: 10,
+                              child: Center(
+                                child: Text("${widget.sortedArray[index]}"),
+                              ),
+                            ),
+                          );
+                        }
+                    ),
+                  ),
+                ) : Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Text("Only applicable for: Merge Sort"),
+                ),
+                Divider(
+                  thickness: 2,
+                  indent: 50,
+                  endIndent: 50,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  void _updateCommon(int i, int j) {
-    setState(() {
-      current = i;
-      check = j;
-    });
-  }
-
   @override
-  void updateSelectionIndex(int i, int j) {
-    _updateCommon(i, j);
-  }
-
-  @override
-  void updateMergeInPlace(List<int> array) {
+  void updateInPlace(List<int> array) {
     setState(() {
       widget.sortedArray.replaceRange(0, array.length ,array);
     });
   }
 
   @override
-  void updateMergeOutPlace(List<int> array, int leftIndex, int rightIndex) {
+  void updateOutPlace(List<int> array) {
     setState(() {
-      outPlaceRightIndex = rightIndex;
-      outPlaceLeftIndex = leftIndex;
       widget.outPlaceArray.replaceRange(0, array.length, array);
-    });
-  }
-
-  @override
-  void updateSorted(int sortedIndex) {
-    setState(() {
-      widget.sortedIndices.add(sortedIndex);
-    });
-  }
-
-  @override
-  void updateBubbleIndex(int i, int j) {
-    _updateCommon(i, j);
-  }
-
-  @override
-  void updateInsertionIndex(int i, int j) {
-    _updateCommon(i, j);
-  }
-
-  @override
-  void updateQuickIndex(int left, int right, int pivot) {
-    setState(() {
-      current = left;
-      check = right;
-      pivotIndex = pivot;
     });
   }
 
@@ -294,7 +341,13 @@ class _SortArrayViewState extends State<SortArrayView> implements SortObserver, 
   @override
   void updateSortChoice(SortChoice sortChoice) {
     setState(() {
-      SortController.instance.addObserver(this);
+//      SortController.instance.addObserver(this);
+    });
+  }
+
+  @override
+  void refresh() {
+    setState(() {
     });
   }
 

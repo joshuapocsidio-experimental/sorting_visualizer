@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/material.dart';
 import 'package:sorting_visualizer/model/BubbleSort.dart';
 import 'package:sorting_visualizer/model/InsertionSort.dart';
 import 'package:sorting_visualizer/model/MergeSort.dart';
@@ -7,6 +8,7 @@ import 'package:sorting_visualizer/model/QuickSort.dart';
 import 'package:sorting_visualizer/model/SelectionSort.dart';
 import 'package:sorting_visualizer/model/SortClass.dart';
 import 'package:sorting_visualizer/model/SortObserver.dart';
+import 'package:sorting_visualizer/widgets/OptimisedAnimatedContainer.dart';
 
 enum SortChoice {
   Insertion,
@@ -26,7 +28,7 @@ const Map<SortSpeed, int> _speedMap = {
   SortSpeed.Instant: 0,
 };
 
-class SortController {
+class SortController{
   final List<SortParentClass> _sorters = [];
   late List<SortUIObserver> _suObs;
 
@@ -38,6 +40,7 @@ class SortController {
   
   late SortChoice sortChoice;
   bool isSorting = false;
+  bool isSorted = false;
   late SortSpeed speed;
 
   SortController._privateConstructor(){
@@ -49,7 +52,6 @@ class SortController {
     insertionSorter = InsertionSort(_speedMap[speed]!);
     selectionSorter = SelectionSort(_speedMap[speed]!);
     bubbleSorter = BubbleSort(_speedMap[speed]!);
-
     _sorters.addAll([mergeSorter, quickSorter, insertionSorter, selectionSorter, bubbleSorter]);
   }
 
@@ -58,7 +60,7 @@ class SortController {
 
   void stop() {
     this.isSorting = false;
-    notifyUIObservers();
+    notifyUIObserversIsSorting();
   }
 
   void changeSpeed(SortSpeed newSpeed) {
@@ -75,7 +77,8 @@ class SortController {
   Future<List<int>> sort(List<int> unsortedArray) async {
     List<int> sortedArray = [];
     isSorting = true;
-    notifyUIObservers();
+    isSorted = false;
+    notifyUIObserversIsSorting();
     if(sortChoice == SortChoice.Bubble) {
       sortedArray = await bubbleSorter.sort(unsortedArray);
     }
@@ -93,7 +96,8 @@ class SortController {
     }
     // TODO: Option to do all sorters in one go for time comparison
     isSorting = false;
-    notifyUIObservers();
+    isSorted = this.checkIfSorted(sortedArray);
+    notifyUIObserversIsSorting();
     return sortedArray;
   }
 
@@ -123,7 +127,7 @@ class SortController {
     if(choice != SortChoice.Selection) {
       selectionSorter.clearObservers();
     }
-    notifyUIObservers();
+    notifyUIObserversSortChoice();
   }
 
   void addUIObserver(SortUIObserver ob) {
@@ -134,96 +138,141 @@ class SortController {
     this._suObs.remove(ob);
   }
 
-  void notifyUIObservers() {
+  void notifyUIObserversIsSorting() {
     for(SortUIObserver ob in _suObs) {
       ob.updateIsSorting(this.isSorting);
+    }
+  }
+
+  void notifyUIObserversSortChoice() {
+    for(SortUIObserver ob in _suObs) {
       ob.updateSortChoice(this.sortChoice);
     }
   }
 
   // Add Observer
-  void addObserver(SortObserver ob) {
+  void addObserver(SortViewObserver ob) {
     switch(sortChoice) {
       case SortChoice.Insertion:
-        addInsertionObserver(ob);
+        insertionSorter.addObserver(ob);
         break;
       case SortChoice.Selection:
-        addSelectionObserver(ob);
+        selectionSorter.addObserver(ob);
         break;
       case SortChoice.Bubble:
-        addBubbleObserver(ob);
+        bubbleSorter.addObserver(ob);
         break;
       case SortChoice.Merge:
-        addMergeObserver(ob);
+        mergeSorter.addObserver(ob);
         break;
       case SortChoice.Quick:
-        addQuickObserver(ob);
+        quickSorter.addObserver(ob);
         break;
       case SortChoice.All:
         // TODO: Handle this case.
         break;
     }
   }
-  void addMergeObserver(MergeSortObserver ob) {
-    mergeSorter.addObserver(ob);
-  }
-  void addQuickObserver(QuickSortObserver ob) {
-    quickSorter.addObserver(ob);
-  }
-  void addBubbleObserver(BubbleSortObserver ob) {
-    bubbleSorter.addObserver(ob);
-  }
-  void addSelectionObserver(SelectionSortObserver ob) {
-    selectionSorter.addObserver(ob);
-  }
-  void addInsertionObserver(InsertionSortObserver ob) {
-    insertionSorter.addObserver(ob);
-  }
   // Remove Observer
-  void removeObserver(SortObserver ob) {
+  void removeObserver(SortViewObserver ob) {
     switch(sortChoice) {
       case SortChoice.Insertion:
-        removeInsertionObserver(ob);
+        insertionSorter.removeObserver(ob);
         break;
       case SortChoice.Selection:
-        removeSelectionObserver(ob);
+        selectionSorter.removeObserver(ob);
         break;
       case SortChoice.Bubble:
-        removeBubbleObserver(ob);
+        bubbleSorter.removeObserver(ob);
         break;
       case SortChoice.Merge:
-        removeMergeObserver(ob);
+        mergeSorter.removeObserver(ob);
         break;
       case SortChoice.Quick:
-        removeQuickObserver(ob);
+        quickSorter.removeObserver(ob);
         break;
       case SortChoice.All:
       // TODO: Handle this case.
         break;
     }
   }
-  void removeMergeObserver(MergeSortObserver ob) {
-    mergeSorter.removeObserver(ob);
-  }
-  void removeQuickObserver(QuickSortObserver ob) {
-    quickSorter.removeObserver(ob);
-  }
-  void removeBubbleObserver(BubbleSortObserver ob) {
-    bubbleSorter.removeObserver(ob);
-  }
-  void removeSelectionObserver(SelectionSortObserver ob) {
-    selectionSorter.removeObserver(ob);
-  }
-  void removeInsertionObserver(InsertionSortObserver ob) {
-    insertionSorter.removeObserver(ob);
-  }
 
-  bool isSorted(List<int> array) {
+  bool checkIfSorted(List<int> array) {
     for(int i = 1; i < array.length; i++){
       if(array[i] < array[i-1]) {
         return false;
       }
     }
     return true;
+  }
+
+  Color getGridItemColor (int gridIndex) {
+    SortController controller = SortController.instance;
+    // Array is already sorted
+    if(isSorted) {
+      return Colors.green.withOpacity(0.8);
+    }
+    if(isSorting) {
+      // Selection Sort
+      if(sortChoice == SortChoice.Selection) {
+        SelectionSort sorter = controller.selectionSorter;
+        if(sorter.sortedIndices.contains(gridIndex)) {
+          return Colors.green.withOpacity(0.7);
+        }
+        if(gridIndex == sorter.iterationIndex) {
+          return Colors.purple;
+        }
+        if(gridIndex == sorter.comparisonIndex) {
+          return Colors.red;
+        }
+      }
+      // Insertion Sort
+      if(sortChoice == SortChoice.Insertion) {
+        InsertionSort sorter = controller.insertionSorter;
+        if(gridIndex == sorter.iterationIndex) {
+          return Colors.purple;
+        }
+        if(gridIndex == sorter.aIndex) {
+          return Colors.blue;
+        }
+        if(gridIndex == sorter.bIndex) {
+          return Colors.red;
+        }
+      }
+      // Quick Sort
+      if(sortChoice == SortChoice.Quick) {
+        QuickSort sorter = controller.quickSorter;
+        if(gridIndex == sorter.left) {
+          return Colors.blue;
+        }
+        if(gridIndex == sorter.right) {
+          return Colors.red;
+        }
+        if(gridIndex == sorter.pivotIndex) {
+          return Colors.purple;
+        }
+      }
+      // Merge Sort
+      if(sortChoice == SortChoice.Merge) {
+        MergeSort sorter = controller.mergeSorter;
+        if(gridIndex >= sorter.leftIndex && gridIndex <= sorter.rightIndex) {
+          return Colors.blue;
+        }
+      }
+      // Bubble Sort
+      if(sortChoice == SortChoice.Bubble) {
+        BubbleSort sorter = controller.bubbleSorter;
+        if(sorter.sortedIndices.contains(gridIndex)) {
+          return Colors.green.withOpacity(0.7);
+        }
+        if(gridIndex == sorter.aIndex) {
+          return Colors.blue;
+        }
+        if(gridIndex == sorter.bIndex) {
+          return Colors.red;
+        }
+      }
+    }
+    return Colors.white;
   }
 }

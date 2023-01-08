@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:sorting_visualizer/controller/SortController.dart';
 import 'package:sorting_visualizer/view/HomePage.dart';
 
 void main() {
+  SortController.instance;
   runApp(MyApp());
 }
 

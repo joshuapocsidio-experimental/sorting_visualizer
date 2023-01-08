@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class InputField extends StatefulWidget {
+class SizeInputField extends StatefulWidget {
   final TextEditingController textEditingController;
   final String label;
   final String hint;
@@ -10,13 +10,13 @@ class InputField extends StatefulWidget {
   late String input = "";
   final void Function(bool) updateCallback;
 
-  InputField({required this.hint, required this.updateCallback, required this.isNumeric, required this.textEditingController, required this.enabled, required this.defaultInput, required this.label});
+  SizeInputField({required this.hint, required this.updateCallback, required this.isNumeric, required this.textEditingController, required this.enabled, required this.defaultInput, required this.label});
 
   @override
-  _InputFieldState createState() => _InputFieldState();
+  _SizeInputFieldState createState() => _SizeInputFieldState();
 }
 
-class _InputFieldState extends State<InputField> {
+class _SizeInputFieldState extends State<SizeInputField> {
   String _errorText = "";
   bool _isInvalid = false;
 
@@ -38,8 +38,8 @@ class _InputFieldState extends State<InputField> {
       return;
     }
 
-    if(inputInt < 0 || inputInt > 10000) {
-      _errorText = "Size constraint: 0 < size < 10,000!";
+    if(inputInt < 0 || inputInt > 1000) {
+      _errorText = "Size constraint: 0 < size < 1,000!";
       _isInvalid = true;
       widget.updateCallback(!_isInvalid);
       print(_errorText);
@@ -63,12 +63,13 @@ class _InputFieldState extends State<InputField> {
       leading: Text(
         widget.label,
         style: TextStyle(
-          fontSize: 18,
+          fontSize: 16,
         ),
       ),
       title: Tooltip(
         message: widget.hint,
         child: TextField(
+          style: TextStyle(fontSize: 14),
           enabled: widget.enabled,
           decoration: InputDecoration(
             border: OutlineInputBorder(),

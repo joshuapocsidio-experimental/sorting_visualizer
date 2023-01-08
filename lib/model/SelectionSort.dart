@@ -4,30 +4,39 @@ import 'package:sorting_visualizer/model/SortObserver.dart';
 
 class SelectionSort extends SortParentClass {
 
-  late List<SelectionSortObserver> _obs;
+  late List<SortViewObserver> _obs;
+  late int comparisonIndex, iterationIndex;
+  late List<int> sortedIndices;
 
   SelectionSort(int speed) : super(speed)  {
     _obs = [];
+    sortedIndices = [];
+    _init();
   }
 
-  void addObserver(SelectionSortObserver ob) {
+  void addObserver(SortViewObserver ob) {
     this._obs.add(ob);
   }
-  void removeObserver(SelectionSortObserver ob) {
+  void removeObserver(SortViewObserver ob) {
     this._obs.remove(ob);
   }
   void clearObservers() {
     _obs = [];
   }
   void notifyObservers(int i, int j) {
-    for(SelectionSortObserver ob in _obs){
-      ob.updateSelectionIndex(i, j);
+    for(SortViewObserver ob in _obs){
+      ob.refresh();
     }
   }
   void notifySortedObservers(int sortedIndex) {
-    for(SelectionSortObserver ob in _obs){
-      ob.updateSorted(sortedIndex);
+    for(SortViewObserver ob in _obs){
+      ob.refresh();
     }
+  }
+
+  void _init() {
+    comparisonIndex = -1;
+    iterationIndex = -1;
   }
 
   @override
@@ -40,6 +49,8 @@ class SelectionSort extends SortParentClass {
 
         await Future.delayed(Duration(milliseconds: super.speed), () {
           notifyObservers(i, j);
+          iterationIndex = i;
+          comparisonIndex = j;
         });
 
         if(check < minimum) {
@@ -54,10 +65,14 @@ class SelectionSort extends SortParentClass {
       }
 
       await Future.delayed(Duration(milliseconds: super.speed * 3), () {
+        if(sortedIndices.contains(i) == false) {
+          sortedIndices.add(i);
+        }
         notifySortedObservers(i);
       });
     }
     isSorting = false;
+    _init();
     return unsortedArray;
   }
 }

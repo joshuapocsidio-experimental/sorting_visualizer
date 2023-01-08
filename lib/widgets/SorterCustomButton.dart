@@ -22,7 +22,7 @@ class SorterCustomButton extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 16,
           ),
         ),
       ),

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:sorting_visualizer/model/SortObserver.dart';
 
 enum SortType {
   SelectionSort,

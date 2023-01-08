@@ -4,25 +4,34 @@ import 'package:sorting_visualizer/model/SortObserver.dart';
 
 class InsertionSort extends SortParentClass {
 
-  late List<InsertionSortObserver> _obs;
+  late List<SortViewObserver> _obs;
+
+  late int aIndex, bIndex, iterationIndex;
 
   InsertionSort(int speed) : super(speed)  {
     _obs = [];
+    _init();
   }
 
-  void addObserver(InsertionSortObserver ob) {
+  void addObserver(SortViewObserver ob) async {
     this._obs.add(ob);
   }
-  void removeObserver(InsertionSortObserver ob) {
+  void removeObserver(SortViewObserver ob) {
     this._obs.remove(ob);
   }
-  void clearObservers() {
+  void clearObservers() async {
     _obs = [];
   }
-  void notifyObservers(int i, int j) {
-    for(InsertionSortObserver ob in _obs){
-      ob.updateInsertionIndex(i, j);
+  void notifyObservers() {
+    for(SortViewObserver ob in _obs){
+      ob.refresh();
     }
+  }
+
+  void _init() {
+    aIndex = -1;
+    bIndex = -1;
+    iterationIndex = -1;
   }
 
   @override
@@ -33,7 +42,10 @@ class InsertionSort extends SortParentClass {
         // If current integer is less than previous value, swap
         int check = unsortedArray.elementAt(j);
         await Future.delayed(Duration(milliseconds: super.speed), () {
-          notifyObservers(i, j);
+          iterationIndex = i;
+          aIndex = j;
+          bIndex = j-1;
+          notifyObservers();
         });
 
         if(check < current) {
@@ -48,6 +60,7 @@ class InsertionSort extends SortParentClass {
     }
     await Future.delayed(Duration(milliseconds: super.speed * 3));
     isSorting = false;
+    _init();
     return unsortedArray;
   }
 }

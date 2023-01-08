@@ -43,7 +43,7 @@ class _DrawerButtonState extends State<DrawerButton> {
               widget.title,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: widget.isSelected ? FontWeight.bold : FontWeight.normal,
                 color: widget.enable ? Colors.black : Colors.grey,
               ),

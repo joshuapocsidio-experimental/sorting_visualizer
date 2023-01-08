@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:sorting_visualizer/controller/SortController.dart';
-import 'package:sorting_visualizer/model/SortClass.dart';
 import 'package:sorting_visualizer/model/SortObserver.dart';
 import 'package:sorting_visualizer/view/SortPage.dart';
-import 'package:sorting_visualizer/widgets/DrawerButton.dart';
 import 'package:sorting_visualizer/widgets/DrawerButtonListView.dart';
 import 'package:progress_indicators/progress_indicators.dart';
 
@@ -112,6 +110,17 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                         "Bubble Sort",
                       ],
                     ),
+                    Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text("By: Joshua Pocsidio"),
+                          ),
+                        ],
+                      ),
+                    )
                   ],
                 ),
               ),

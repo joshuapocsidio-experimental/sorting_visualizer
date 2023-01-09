@@ -73,7 +73,6 @@ class MergeSort extends SortParentClass {
     }
     await Future.delayed(Duration(milliseconds: super.speed), () {
       notifyInPlaceObservers(temp);
-      print(temp);
     });
     return mergedArray;
   }

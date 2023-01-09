@@ -30,6 +30,7 @@ const Map<SortSpeed, int> _speedMap = {
 
 class SortController{
   final List<SortParentClass> _sorters = [];
+  final Map<SortChoice, SortParentClass> _sorterMap = {};
   late List<SortUIObserver> _suObs;
 
   late MergeSort mergeSorter;
@@ -53,6 +54,12 @@ class SortController{
     selectionSorter = SelectionSort(_speedMap[speed]!);
     bubbleSorter = BubbleSort(_speedMap[speed]!);
     _sorters.addAll([mergeSorter, quickSorter, insertionSorter, selectionSorter, bubbleSorter]);
+    _sorterMap[SortChoice.Insertion] = insertionSorter;
+    _sorterMap[SortChoice.Selection] = selectionSorter;
+    _sorterMap[SortChoice.Bubble] = bubbleSorter;
+    _sorterMap[SortChoice.Quick] = quickSorter;
+    _sorterMap[SortChoice.Merge] = mergeSorter;
+
   }
 
   static final SortController _instance = SortController._privateConstructor();
@@ -79,21 +86,7 @@ class SortController{
     isSorting = true;
     isSorted = false;
     notifyUIObserversIsSorting();
-    if(sortChoice == SortChoice.Bubble) {
-      sortedArray = await bubbleSorter.sort(unsortedArray);
-    }
-    if(sortChoice == SortChoice.Insertion) {
-      sortedArray = await insertionSorter.sort(unsortedArray);
-    }
-    if(sortChoice == SortChoice.Selection) {
-      sortedArray = await selectionSorter.sort(unsortedArray);
-    }
-    if(sortChoice == SortChoice.Quick) {
-      sortedArray = await quickSorter.sort(unsortedArray);
-    }
-    if(sortChoice == SortChoice.Merge) {
-      sortedArray = await mergeSorter.sort(unsortedArray);
-    }
+    sortedArray = await _sorterMap[sortChoice]!.sort(unsortedArray);
     // TODO: Option to do all sorters in one go for time comparison
     isSorting = false;
     isSorted = this.checkIfSorted(sortedArray);
@@ -200,10 +193,12 @@ class SortController{
   bool checkIfSorted(List<int> array) {
     for(int i = 1; i < array.length; i++){
       if(array[i] < array[i-1]) {
-        return false;
+        isSorted = false;
+        return isSorted;
       }
     }
-    return true;
+    isSorted = true;
+    return isSorted;
   }
 
   Color getGridItemColor (int gridIndex) {

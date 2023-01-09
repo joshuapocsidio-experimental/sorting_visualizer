@@ -44,8 +44,8 @@ class MergeSort extends SortParentClass {
     List<int> newArray = unsortedArray.toList(growable: true);
     List<int> sortedArray = await _mergeRecurse(newArray, temp, 0, unsortedArray.length-1);
     await Future.delayed(Duration(milliseconds: super.speed), () {
-      temp = List.filled(unsortedArray.length, 0);
-      notifyOutPlaceObservers(temp);
+      notifyInPlaceObservers(temp);
+      notifyOutPlaceObservers(List.filled(unsortedArray.length, 0));
     });
     _init();
     return sortedArray;
@@ -73,6 +73,7 @@ class MergeSort extends SortParentClass {
     }
     await Future.delayed(Duration(milliseconds: super.speed), () {
       notifyInPlaceObservers(temp);
+      print(temp);
     });
     return mergedArray;
   }

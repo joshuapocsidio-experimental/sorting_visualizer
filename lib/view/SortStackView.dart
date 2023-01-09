@@ -12,9 +12,8 @@ class SortStackView extends StatefulWidget {
   final List<int> unsortedData;
   final List<int> sortedData;
   final List<int> outPlaceData;
-  final bool isSorted;
 
-  SortStackView({required this.outPlaceData, required this.isSorted, required this.unsortedData, required this.sortedData});
+  SortStackView({required this.outPlaceData, required this.unsortedData, required this.sortedData});
   @override
   _SortStackViewState createState() => _SortStackViewState();
 }
@@ -25,7 +24,7 @@ class _SortStackViewState extends State<SortStackView> implements SortViewObserv
   Color _getGridElementColour (int gridIndex) {
     SortController controller = SortController.instance;
     // Array is already sorted
-    if(widget.isSorted) {
+    if(controller.isSorted) {
       return Colors.green.withOpacity(0.8);
     }
     if(SortController.instance.isSorting) {

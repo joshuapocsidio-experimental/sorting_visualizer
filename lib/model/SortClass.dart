@@ -24,7 +24,6 @@ abstract class SortParentClass {
   bool isSorting = false;
   late int speed;
 
-  @protected
   Future<List<int>> sort(List<int> unsortedArray);
 
   void stop() {

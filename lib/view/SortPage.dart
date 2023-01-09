@@ -27,8 +27,6 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
   final Stopwatch sw = Stopwatch();
   late Timer t;
   List<int> sorted = [];
-  bool isSorting = false;
-  bool isSorted = false;
   Map<SortChoice, String?> sortMap = {
     SortChoice.Insertion: "Insertion Sort",
     SortChoice.Selection: "Selection Sort",
@@ -44,32 +42,20 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
 
   Future<void> sort() async {
     reset();
-    isSorting = true;
+    await Future.delayed(Duration(milliseconds: 100));
     // Initialise Timer for updating GUI and initialise stopwatch for time monitoring
     sw.reset();
     sw.start();
-    t = Timer.periodic(Duration(milliseconds: 10), (_) {
+    t = Timer.periodic(Duration(), (_) {
       setState(() {
         _elapsed = sw.elapsed;
       });
     });
-
     // Update Unsorted array with the latest array
-    setState(() {
-      isSorting = true;
-      _sortedArray = _unsortedArray.toList();
-    });
-
     await SortController.instance.sort(_sortedArray);
     // Stop timer
     sw.stop();
     t.cancel();
-    isSorted = SortController.instance.checkIfSorted(_sortedArray);
-    // Update GUI
-    setState(()  {
-      isSorting = false;
-      print(_elapsed);
-    });
   }
 
   void stop() {
@@ -77,7 +63,6 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
       t.cancel();
       sw.stop();
       SortController.instance.stop();
-      isSorted = SortController.instance.checkIfSorted(_sortedArray);
     });
   }
 
@@ -85,9 +70,9 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
     setState(() {
       _sortedArray = _unsortedArray.toList();
       outPlaceData = List.filled(_unsortedArray.length, 0, growable: true);
+      SortController.instance.checkIfSorted(_sortedArray);
       t.cancel();
       sw.stop();
-      isSorted = false;
       sortedIndices = [];
     });
   }
@@ -277,8 +262,10 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
                                 enable: !SortController.instance.isSorting,
                                 buttonColor: Colors.blue,
                                 label: "Sort",
-                                callback: () async {
-                                  await sort();
+                                callback: () {
+                                  setState(() {
+                                    sort();
+                                  });
                                 }
                             ),
                             SorterCustomButton(
@@ -318,13 +305,10 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
                   child: visualType == VisualType.ArrayView ?
                   SortArrayView(
                     outPlaceArray: outPlaceData,
-                    isSorted: isSorted,
-                    isSorting: isSorting,
                     sortedArray: _sortedArray,
                     unsortedArray: _unsortedArray,
                   ) :
                   SortStackView(
-                    isSorted: isSorted,
                     sortedData: _sortedArray,
                     unsortedData: _unsortedArray,
                     outPlaceData: outPlaceData,

@@ -11,10 +11,8 @@ class SortArrayView extends StatefulWidget {
   final List<int> sortedArray;
   final List<int> unsortedArray;
   final List<int> outPlaceArray;
-  final bool isSorting;
-  final bool isSorted;
 
-  SortArrayView({required this.outPlaceArray, required this.isSorting, required this.isSorted, required this.sortedArray, required this.unsortedArray});
+  SortArrayView({required this.outPlaceArray, required this.sortedArray, required this.unsortedArray});
 
   @override
   _SortArrayViewState createState() => _SortArrayViewState();
@@ -28,7 +26,7 @@ class _SortArrayViewState extends State<SortArrayView> implements SortUIObserver
   Color _getGridElementColour (int gridIndex) {
     SortController controller = SortController.instance;
     // Array is already sorted
-    if(widget.isSorted) {
+    if(controller.isSorted) {
       return Colors.green.withOpacity(0.8);
     }
     if(SortController.instance.isSorting) {

@@ -112,8 +112,8 @@ class QuickSort extends SortParentClass {
     if(leftIndex > rightIndex) {
       return;
     }
-    while(leftIndex <= rightIndex) {
-      while(leftIndex <= rightIndex && array[leftIndex] <= pivot) {
+    while(leftIndex <= rightIndex && SortController.instance.isSorting) {
+      while(leftIndex <= rightIndex && array[leftIndex] <= pivot && SortController.instance.isSorting) {
         leftIndex++;
         await Future.delayed(Duration(milliseconds: super.speed), () {
           left = leftIndex;
@@ -121,7 +121,7 @@ class QuickSort extends SortParentClass {
           notifyObservers(leftIndex, rightIndex, pivotIndex);
         });
       }
-      while(leftIndex <= rightIndex && array[rightIndex] >= pivot) {
+      while(leftIndex <= rightIndex && array[rightIndex] >= pivot && SortController.instance.isSorting) {
         rightIndex--;
         await Future.delayed(Duration(milliseconds: super.speed), () {
           left = leftIndex;

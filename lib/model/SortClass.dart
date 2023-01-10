@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:sorting_visualizer/model/SortObserver.dart';
 
 enum SortType {
@@ -44,7 +43,7 @@ abstract class Sorter implements SortAlgorithm{
     for(SortViewObserver ob in obs){
       ob.refresh();
     }
-    await Future.delayed(Duration(milliseconds: speed * log(dataSize).toInt()));
+    await Future.delayed(Duration(milliseconds: speed));
   }
   Sorter(int initSpeed) {
     speed = initSpeed;

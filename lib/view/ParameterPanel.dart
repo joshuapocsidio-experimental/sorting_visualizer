@@ -29,7 +29,7 @@ class _ParameterPanelState extends State<ParameterPanel> {
     'Normal' : SortSpeed.Normal,
     'Fast' : SortSpeed.Fast,
     'Very Fast' : SortSpeed.VeryFast,
-    'Instant' : SortSpeed.Instant,
+    'Fastest' : SortSpeed.Instant,
   };
 
   Column _getLegend() {

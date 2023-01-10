@@ -22,7 +22,7 @@ const Map<SortSpeed, int> _speedMap = {
   SortSpeed.Slow: 500,
   SortSpeed.Normal: 250,
   SortSpeed.Fast: 50,
-  SortSpeed.VeryFast: 1,
+  SortSpeed.VeryFast: 5,
   SortSpeed.Instant: 0,
 };
 

@@ -53,7 +53,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       child: Padding(
                         padding: const EdgeInsets.all(50.0),
                         child: Container(
-                          child: SortController.instance.isSorting ? GlowingProgressIndicator(
+                          child: SortController.instance.checkIfSorting() ? GlowingProgressIndicator(
                             duration: Duration(milliseconds: 750),
                             child: Icon(
                               Icons.graphic_eq_sharp,
@@ -83,7 +83,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       color: Colors.grey,
                     ),
                     DrawerButtonListView(
-                      enable: !SortController.instance.isSorting,
+                      enable: !SortController.instance.checkIfSorting(),
                       startingIndex: 0,
                       onTapFunctions: [
                         () {
@@ -136,9 +136,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   }
 
   @override
-  void updateIsSorting(isSorting) {
+  void refreshUI() {
     setState(() {
-      if(isSorting) {
+      if(SortController.instance.checkIfSorting()) {
         animationController.forward();
         animatedIconColor = Colors.greenAccent;
       }
@@ -146,13 +146,6 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         animationController.reverse();
         animatedIconColor = Colors.redAccent;
       }
-    });
-  }
-
-  @override
-  void updateSortChoice(SortChoice sortChoice) {
-    setState(() {
-
     });
   }
 }

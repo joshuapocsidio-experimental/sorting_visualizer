@@ -1,19 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:sorting_visualizer/controller/SortController.dart';
-import 'package:sorting_visualizer/model/BubbleSort.dart';
-import 'package:sorting_visualizer/model/InsertionSort.dart';
-import 'package:sorting_visualizer/model/MergeSort.dart';
-import 'package:sorting_visualizer/model/QuickSort.dart';
-import 'package:sorting_visualizer/model/SelectionSort.dart';
 import 'package:sorting_visualizer/model/SortObserver.dart';
 
 class SortStackView extends StatefulWidget {
-  final List<int> unsortedData;
-  final List<int> sortedData;
-  final List<int> outPlaceData;
-
-  SortStackView({required this.outPlaceData, required this.unsortedData, required this.sortedData});
   @override
   _SortStackViewState createState() => _SortStackViewState();
 }
@@ -21,85 +11,15 @@ class SortStackView extends StatefulWidget {
 class _SortStackViewState extends State<SortStackView> implements SortViewObserver, SortUIObserver{
   List<bool> isExpansionOpen = [true, true, SortController.instance.sortChoice == SortChoice.Merge ? true : false];
 
-  Color _getGridElementColour (int gridIndex) {
-    SortController controller = SortController.instance;
-    // Array is already sorted
-    if(controller.isSorted) {
-      return Colors.green.withOpacity(0.8);
-    }
-    if(SortController.instance.isSorting) {
-      // Selection Sort
-      if(SortController.instance.sortChoice == SortChoice.Selection) {
-        SelectionSort sorter = controller.selectionSorter;
-        if(sorter.sortedIndices.contains(gridIndex)) {
-          return Colors.green.withOpacity(0.7);
-        }
-        if(gridIndex == sorter.iterationIndex) {
-          return Colors.purple;
-        }
-        if(gridIndex == sorter.comparisonIndex) {
-          return Colors.red;
-        }
-      }
-      // Insertion Sort
-      if(SortController.instance.sortChoice == SortChoice.Insertion) {
-        InsertionSort sorter = controller.insertionSorter;
-        if(gridIndex == sorter.iterationIndex) {
-          return Colors.purple;
-        }
-        if(gridIndex == sorter.aIndex) {
-          return Colors.blue;
-        }
-        if(gridIndex == sorter.bIndex) {
-          return Colors.red;
-        }
-      }
-      // Quick Sort
-      if(SortController.instance.sortChoice == SortChoice.Quick) {
-        QuickSort sorter = controller.quickSorter;
-        if(gridIndex == sorter.left) {
-          return Colors.blue;
-        }
-        if(gridIndex == sorter.right) {
-          return Colors.red;
-        }
-        if(gridIndex == sorter.pivotIndex) {
-          return Colors.purple;
-        }
-      }
-      // Merge Sort
-      if(SortController.instance.sortChoice == SortChoice.Merge) {
-        MergeSort sorter = controller.mergeSorter;
-        if(gridIndex >= sorter.leftIndex && gridIndex <= sorter.rightIndex) {
-          return Colors.blue;
-        }
-      }
-      // Bubble Sort
-      if(SortController.instance.sortChoice == SortChoice.Bubble) {
-        BubbleSort sorter = controller.bubbleSorter;
-        if(sorter.sortedIndices.contains(gridIndex)) {
-          return Colors.green.withOpacity(0.7);
-        }
-        if(gridIndex == sorter.aIndex) {
-          return Colors.blue;
-        }
-        if(gridIndex == sorter.bIndex) {
-          return Colors.red;
-        }
-      }
-    }
-    return Colors.white;
-  }
-
   List<BarChartGroupData> getUnsortedData() {
     List<BarChartGroupData> data = [];
-    for(int i = 0; i < widget.unsortedData.length; i++) {
+    for(int i = 0; i < SortController.instance.unsortedArray.length; i++) {
       data.add(
         BarChartGroupData(
           x: i,
           barRods: [
             BarChartRodData(
-              y: widget.unsortedData[i].toDouble(),
+              y: SortController.instance.unsortedArray[i].toDouble(),
               colors: [
                 Colors.grey,
               ]
@@ -112,47 +32,47 @@ class _SortStackViewState extends State<SortStackView> implements SortViewObserv
   }
   List<FlSpot> getUnsortedLineData() {
     List<FlSpot> data = [];
-    for(int i = 0; i < widget.unsortedData.length; i++) {
-      data.add(FlSpot(i.toDouble(), widget.unsortedData[i].toDouble()));
+    for(int i = 0; i < SortController.instance.unsortedArray.length; i++) {
+      data.add(FlSpot(i.toDouble(), SortController.instance.unsortedArray[i].toDouble()));
     }
     return data;
   }
 
   List<FlSpot> getOutPlaceLineData() {
     List<FlSpot> data = [];
-    for(int i = 0; i < widget.outPlaceData.length; i++) {
-      data.add(FlSpot(i.toDouble(), widget.outPlaceData[i].toDouble()));
+    for(int i = 0; i < SortController.instance.outPlaceData.length; i++) {
+      data.add(FlSpot(i.toDouble(), SortController.instance.outPlaceData[i].toDouble()));
     }
     return data;
   }
 
   List<Color> getColors() {
     List<Color> colors = [];
-    for(int i = 0; i < widget.sortedData.length; i++) {
-      colors.add(_getGridElementColour(i));
+    for(int i = 0; i < SortController.instance.sortedArray.length; i++) {
+      colors.add(SortController.instance.getGridItemColor(i));
     }
     return colors;
   }
 
   List<FlSpot> getSortedLineData() {
     List<FlSpot> data = [];
-    for(int i = 0; i < widget.sortedData.length; i++) {
-      data.add(FlSpot(i.toDouble(), widget.sortedData[i].toDouble()));
+    for(int i = 0; i < SortController.instance.sortedArray.length; i++) {
+      data.add(FlSpot(i.toDouble(), SortController.instance.sortedArray[i].toDouble()));
     }
     return data;
   }
 
   List<BarChartGroupData> getSortedData() {
     List<BarChartGroupData> data = [];
-    for(int i = 0; i < widget.sortedData.length; i++) {
+    for(int i = 0; i < SortController.instance.sortedArray.length; i++) {
       data.add(
         BarChartGroupData(
             x: i,
             barRods: [
               BarChartRodData(
-                y: widget.sortedData[i].toDouble(),
+                y: SortController.instance.sortedArray[i].toDouble(),
                 colors: [
-                  _getGridElementColour(i),
+                  SortController.instance.getGridItemColor(i),
                 ],
               )
             ]
@@ -315,28 +235,16 @@ class _SortStackViewState extends State<SortStackView> implements SortViewObserv
   }
 
   @override
-  void updateInPlace(List<int> array) {
+  void refreshUI() {
     setState(() {
-      widget.sortedData.replaceRange(0, array.length ,array);
+
     });
   }
-
-  @override
-  void updateOutPlace(List<int> array) {
-    setState(() {
-      widget.outPlaceData.replaceRange(0, array.length, array);
-    });
-  }
-
-  @override
-  void updateIsSorting(bool isSorting) {
-    // TODO: implement updateIsSorting
-  }
-
-  @override
-  void updateSortChoice(SortChoice sortChoice) {
-    setState(() {
-      SortController.instance.addObserver(this);
-    });
-  }
+//
+//  @override
+//  void updateSortChoice(SortChoice sortChoice) {
+//    setState(() {
+//      SortController.instance.addObserver(this);
+//    });
+//  }
 }

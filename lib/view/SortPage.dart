@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -22,11 +21,9 @@ enum VisualType {
 }
 
 class _SortPageState extends State<SortPage> implements SortUIObserver {
-  List<int> sortedIndices = [];
   late VisualType visualType;
   final Stopwatch sw = Stopwatch();
   late Timer t;
-  List<int> sorted = [];
   Map<SortChoice, String?> sortMap = {
     SortChoice.Insertion: "Insertion Sort",
     SortChoice.Selection: "Selection Sort",
@@ -35,9 +32,6 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
     SortChoice.Quick: "Quick Sort",
   };
 
-  List<int> _unsortedArray = [];
-  List<int> _sortedArray = [];
-  List<int> outPlaceData = [];
   late Duration _elapsed;
 
   Future<void> sort() async {
@@ -52,7 +46,7 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
       });
     });
     // Update Unsorted array with the latest array
-    await SortController.instance.sort(_sortedArray);
+    await SortController.instance.sort();
     // Stop timer
     sw.stop();
     t.cancel();
@@ -68,54 +62,22 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
 
   void reset() {
     setState(() {
-      _sortedArray = _unsortedArray.toList();
-      outPlaceData = List.filled(_unsortedArray.length, 0, growable: true);
-      SortController.instance.checkIfSorted(_sortedArray);
+      SortController.instance.reset();
       t.cancel();
       sw.stop();
-      sortedIndices = [];
     });
   }
 
   void generateArray() {
     setState(() {
-      for(int i = 0; i < _unsortedArray.length; i++){
-        _unsortedArray[i] = Random().nextInt(_unsortedArray.length);
-      }
-      sortedIndices = [];
-      _sortedArray = _unsortedArray.toList();
-      outPlaceData = List.filled(_unsortedArray.length, 0, growable: true);
+      SortController.instance.generate();
     });
     reset();
   }
 
   void updateArraySize(int size){
-    if(size < 2) {
-      print("Array size requires at least 2 for sorting");
-      return;
-    }
-    if(size > 10000) {
-      print("Array size upper limit reached");
-    }
-
-    if(size == _unsortedArray.length){
-      print("No size change required");
-      return;
-    }
-
-    int diff = size - _unsortedArray.length;
     setState(() {
-      if(size < _unsortedArray.length) {
-        _unsortedArray = _unsortedArray.sublist(0, size);
-        print("Array size decreased by $diff");
-      }
-
-      if(size > _unsortedArray.length) {
-        for(int i = 0; i < diff; i++) {
-          _unsortedArray.add(0);
-        }
-        print("Array size increased by $diff");
-      }
+      SortController.instance.updateArraySize(size);
     });
   }
 
@@ -128,14 +90,9 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
   @override
   void initState() {
     super.initState();
-    _unsortedArray = List.filled(20, 0, growable: true);
     _elapsed = Duration();
     t = Timer(_elapsed, (){});
-    generateArray();
-    _sortedArray = _unsortedArray.toList();
-    outPlaceData = List.filled(_unsortedArray.length, 0, growable: true);
     visualType = VisualType.GraphView;
-    
     SortController.instance.addUIObserver(this);
   }
 
@@ -259,7 +216,7 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
                           alignment: MainAxisAlignment.start,
                           children: [
                             SorterCustomButton(
-                                enable: !SortController.instance.isSorting,
+                                enable: !SortController.instance.checkIfSorting(),
                                 buttonColor: Colors.blue,
                                 label: "Sort",
                                 callback: () {
@@ -269,7 +226,7 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
                                 }
                             ),
                             SorterCustomButton(
-                                enable: SortController.instance.isSorting,
+                                enable: SortController.instance.checkIfSorting(),
                                 buttonColor: Colors.redAccent,
                                 label: "Stop",
                                 callback: () {
@@ -277,7 +234,7 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
                                 }
                             ),
                             SorterCustomButton(
-                                enable: !SortController.instance.isSorting,
+                                enable: !SortController.instance.checkIfSorting(),
                                 buttonColor: Colors.orangeAccent,
                                 label: "Reset",
                                 callback: () {
@@ -285,7 +242,7 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
                                 }
                             ),
                             SorterCustomButton(
-                                enable: !SortController.instance.isSorting,
+                                enable: !SortController.instance.checkIfSorting(),
                                 buttonColor: Colors.blue,
                                 label: "Auto Generate",
                                 callback: () {
@@ -303,16 +260,8 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: visualType == VisualType.ArrayView ?
-                  SortArrayView(
-                    outPlaceArray: outPlaceData,
-                    sortedArray: _sortedArray,
-                    unsortedArray: _unsortedArray,
-                  ) :
-                  SortStackView(
-                    sortedData: _sortedArray,
-                    unsortedData: _unsortedArray,
-                    outPlaceData: outPlaceData,
-                  ),
+                  SortArrayView() :
+                  SortStackView(),
                 )
               ),
             ],
@@ -321,7 +270,7 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
         Expanded(
           flex: 1,
           child: ParameterPanel(
-            initialArraySize: _unsortedArray.length,
+            initialArraySize: SortController.instance.unsortedArray.length,
             updateArraySize: updateArraySize,
           ),
         ),
@@ -330,15 +279,17 @@ class _SortPageState extends State<SortPage> implements SortUIObserver {
   }
 
   @override
-  void updateIsSorting(bool isSorting) {
-    // TODO: implement updateIsSorting
-  }
-
-  @override
-  void updateSortChoice(SortChoice sortChoice ) {
+  void refreshUI() {
     setState(() {
-      print("reset");
-      reset();
+
     });
   }
+//
+//  @override
+//  void updateSortChoice(SortChoice sortChoice ) {
+//    setState(() {
+//      print("reset");
+//      reset();
+//    });z
+//  }
 }

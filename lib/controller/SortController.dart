@@ -8,7 +8,6 @@ import 'package:sorting_visualizer/model/QuickSort.dart';
 import 'package:sorting_visualizer/model/SelectionSort.dart';
 import 'package:sorting_visualizer/model/SortClass.dart';
 import 'package:sorting_visualizer/model/SortObserver.dart';
-import 'package:sorting_visualizer/widgets/OptimisedAnimatedContainer.dart';
 
 enum SortChoice {
   Insertion,
@@ -16,111 +15,141 @@ enum SortChoice {
   Bubble,
   Merge,
   Quick,
-  All,
 }
 
 const Map<SortSpeed, int> _speedMap = {
   SortSpeed.VerySlow: 1000,
   SortSpeed.Slow: 500,
   SortSpeed.Normal: 250,
-  SortSpeed.Fast: 100,
-  SortSpeed.VeryFast: 10,
+  SortSpeed.Fast: 50,
+  SortSpeed.VeryFast: 1,
   SortSpeed.Instant: 0,
 };
 
 class SortController{
-  final List<SortParentClass> _sorters = [];
-  final Map<SortChoice, SortParentClass> _sorterMap = {};
+  late Sorter _sorter;
   late List<SortUIObserver> _suObs;
 
-  late MergeSort mergeSorter;
-  late QuickSort quickSorter;
-  late InsertionSort insertionSorter;
-  late SelectionSort selectionSorter;
-  late BubbleSort bubbleSorter;
-  
   late SortChoice sortChoice;
-  bool isSorting = false;
   bool isSorted = false;
   late SortSpeed speed;
+
+  late List<int> unsortedArray;
+  late List<int> sortedArray;
+  late List<int> outPlaceData;
+  late List<int> sortedIndices;
 
   SortController._privateConstructor(){
     _suObs = [];
     speed = SortSpeed.Normal;
     sortChoice = SortChoice.Insertion;
-    mergeSorter = MergeSort(_speedMap[speed]!);
-    quickSorter = QuickSort(_speedMap[speed]!);
-    insertionSorter = InsertionSort(_speedMap[speed]!);
-    selectionSorter = SelectionSort(_speedMap[speed]!);
-    bubbleSorter = BubbleSort(_speedMap[speed]!);
-    _sorters.addAll([mergeSorter, quickSorter, insertionSorter, selectionSorter, bubbleSorter]);
-    _sorterMap[SortChoice.Insertion] = insertionSorter;
-    _sorterMap[SortChoice.Selection] = selectionSorter;
-    _sorterMap[SortChoice.Bubble] = bubbleSorter;
-    _sorterMap[SortChoice.Quick] = quickSorter;
-    _sorterMap[SortChoice.Merge] = mergeSorter;
-
+    _sorter = InsertionSort();
+    _sorter.speed = _speedMap[speed]!;
+    unsortedArray = [];
+    sortedArray = [];
+    outPlaceData = [];
+    sortedIndices = [];
+    updateArraySize(50);
+    generate();
   }
 
   static final SortController _instance = SortController._privateConstructor();
   static SortController get instance => _instance;
 
   void stop() {
-    this.isSorting = false;
-    notifyUIObserversIsSorting();
+    _sorter.isSorting = false;
+    notifyUIObservers();
+  }
+
+  void reset() {
+    sortedArray = unsortedArray.toList();
+    outPlaceData = List.filled(unsortedArray.length, 0, growable: true);
+    _checkIfSorted(sortedArray);
+    sortedIndices = [];
+  }
+
+  void generate() {
+    for(int i = 0; i < unsortedArray.length; i++){
+      unsortedArray[i] = Random().nextInt(unsortedArray.length);
+    }
+    sortedIndices = [];
+    sortedArray = unsortedArray.toList();
+    outPlaceData = List.filled(unsortedArray.length, 0, growable: true);
+  }
+
+  void updateArraySize(int size){
+    if(size < 2) {
+      print("Array size requires at least 2 for sorting");
+      return;
+    }
+    if(size > 10000) {
+      print("Array size upper limit reached");
+    }
+
+    if(size == unsortedArray.length){
+      print("No size change required");
+      return;
+    }
+
+    int diff = size - unsortedArray.length;
+    if(size < unsortedArray.length) {
+      unsortedArray = unsortedArray.sublist(0, size);
+      print("Array size decreased by $diff");
+    }
+
+    if(size > unsortedArray.length) {
+      for(int i = 0; i < diff; i++) {
+        unsortedArray.add(0);
+      }
+      print("Array size increased by $diff");
+    }
+  }
+
+  Sorter getSorter() {
+    return _sorter;
   }
 
   void changeSpeed(SortSpeed newSpeed) {
     speed = newSpeed;
-    for(SortParentClass sorter in _sorters) {
-      sorter.speed = getSpeedInMs();
-    }
+    _sorter.speed = _speedMap[speed]!;
   }
 
   int getSpeedInMs() {
-    return _speedMap[speed]!;
+    return _sorter.speed;
   }
 
-  Future<List<int>> sort(List<int> unsortedArray) async {
-    List<int> sortedArray = [];
-    isSorting = true;
-    isSorted = false;
-    notifyUIObserversIsSorting();
-    sortedArray = await _sorterMap[sortChoice]!.sort(unsortedArray);
-    // TODO: Option to do all sorters in one go for time comparison
-    isSorting = false;
-    isSorted = this.checkIfSorted(sortedArray);
-    notifyUIObserversIsSorting();
-    return sortedArray;
+  Future<void> sort() async {
+    notifyUIObservers();
+    await _sorter.sort(sortedArray, outPlaceData);
+    notifyUIObservers();
   }
 
   void clearObservers() {
-    insertionSorter.clearObservers();
-    quickSorter.clearObservers();
-    mergeSorter.clearObservers();
-    bubbleSorter.clearObservers();
-    selectionSorter.clearObservers();
+    _sorter.clearObservers();
   }
 
   void changeSortChoice(SortChoice choice) {
     this.sortChoice = choice;
-    // Remove other type of observers when changing sorter
-    if(choice != SortChoice.Insertion) {
-      insertionSorter.clearObservers();
+    switch(choice) {
+      case SortChoice.Insertion:
+        _sorter = InsertionSort();
+        break;
+      case SortChoice.Selection:
+        _sorter = SelectionSort();
+        break;
+      case SortChoice.Bubble:
+        _sorter = BubbleSort();
+        break;
+      case SortChoice.Merge:
+        _sorter = MergeSort();
+        break;
+      case SortChoice.Quick:
+        _sorter = QuickSort();
+        break;
     }
-    if(choice != SortChoice.Quick) {
-      quickSorter.clearObservers();
-    }
-    if(choice != SortChoice.Merge) {
-      mergeSorter.clearObservers();
-    }
-    if(choice != SortChoice.Bubble) {
-      bubbleSorter.clearObservers();
-    }
-    if(choice != SortChoice.Selection) {
-      selectionSorter.clearObservers();
-    }
-    notifyUIObserversSortChoice();
+    changeSpeed(speed);
+    reset();
+    notifyUIObservers();
   }
 
   void addUIObserver(SortUIObserver ob) {
@@ -131,86 +160,43 @@ class SortController{
     this._suObs.remove(ob);
   }
 
-  void notifyUIObserversIsSorting() {
+  void notifyUIObservers() {
     for(SortUIObserver ob in _suObs) {
-      ob.updateIsSorting(this.isSorting);
+      ob.refreshUI();
     }
   }
 
-  void notifyUIObserversSortChoice() {
-    for(SortUIObserver ob in _suObs) {
-      ob.updateSortChoice(this.sortChoice);
-    }
-  }
-
-  // Add Observer
   void addObserver(SortViewObserver ob) {
-    switch(sortChoice) {
-      case SortChoice.Insertion:
-        insertionSorter.addObserver(ob);
-        break;
-      case SortChoice.Selection:
-        selectionSorter.addObserver(ob);
-        break;
-      case SortChoice.Bubble:
-        bubbleSorter.addObserver(ob);
-        break;
-      case SortChoice.Merge:
-        mergeSorter.addObserver(ob);
-        break;
-      case SortChoice.Quick:
-        quickSorter.addObserver(ob);
-        break;
-      case SortChoice.All:
-        // TODO: Handle this case.
-        break;
-    }
-  }
-  // Remove Observer
-  void removeObserver(SortViewObserver ob) {
-    switch(sortChoice) {
-      case SortChoice.Insertion:
-        insertionSorter.removeObserver(ob);
-        break;
-      case SortChoice.Selection:
-        selectionSorter.removeObserver(ob);
-        break;
-      case SortChoice.Bubble:
-        bubbleSorter.removeObserver(ob);
-        break;
-      case SortChoice.Merge:
-        mergeSorter.removeObserver(ob);
-        break;
-      case SortChoice.Quick:
-        quickSorter.removeObserver(ob);
-        break;
-      case SortChoice.All:
-      // TODO: Handle this case.
-        break;
-    }
+    _sorter.addObserver(ob);
   }
 
-  bool checkIfSorted(List<int> array) {
+  void removeObserver(SortViewObserver ob) {
+    _sorter.removeObserver(ob);
+  }
+
+  bool _checkIfSorted(List<int> array) {
     for(int i = 1; i < array.length; i++){
       if(array[i] < array[i-1]) {
-        isSorted = false;
-        return isSorted;
+        return false;
       }
     }
-    isSorted = true;
-    return isSorted;
+    return true;
+  }
+
+
+  bool checkIfSorting() {
+    return _sorter.isSorting;
   }
 
   Color getGridItemColor (int gridIndex) {
-    SortController controller = SortController.instance;
     // Array is already sorted
-    if(isSorted) {
+    if(_checkIfSorted(sortedArray)) {
       return Colors.green.withOpacity(0.8);
     }
-    if(isSorting) {
+    if(checkIfSorting()) {
       // Selection Sort
       if(sortChoice == SortChoice.Selection) {
-        SelectionSort sorter = controller.selectionSorter;
+        SelectionSort sorter = _sorter as SelectionSort;
         if(sorter.sortedIndices.contains(gridIndex)) {
           return Colors.green.withOpacity(0.7);
         }
@@ -223,7 +209,7 @@ class SortController{
       }
       // Insertion Sort
       if(sortChoice == SortChoice.Insertion) {
-        InsertionSort sorter = controller.insertionSorter;
+        InsertionSort sorter = _sorter as InsertionSort;
         if(gridIndex == sorter.iterationIndex) {
           return Colors.purple;
         }
@@ -236,7 +222,7 @@ class SortController{
       }
       // Quick Sort
       if(sortChoice == SortChoice.Quick) {
-        QuickSort sorter = controller.quickSorter;
+        QuickSort sorter = _sorter as QuickSort;
         if(gridIndex == sorter.left) {
           return Colors.blue;
         }
@@ -249,14 +235,14 @@ class SortController{
       }
       // Merge Sort
       if(sortChoice == SortChoice.Merge) {
-        MergeSort sorter = controller.mergeSorter;
+        MergeSort sorter = _sorter as MergeSort;
         if(gridIndex >= sorter.leftIndex && gridIndex <= sorter.rightIndex) {
           return Colors.blue;
         }
       }
       // Bubble Sort
       if(sortChoice == SortChoice.Bubble) {
-        BubbleSort sorter = controller.bubbleSorter;
+        BubbleSort sorter = _sorter as BubbleSort;
         if(sorter.sortedIndices.contains(gridIndex)) {
           return Colors.green.withOpacity(0.7);
         }

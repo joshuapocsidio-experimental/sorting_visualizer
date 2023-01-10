@@ -1,36 +1,12 @@
-import 'package:sorting_visualizer/controller/SortController.dart';
 import 'package:sorting_visualizer/model/SortClass.dart';
-import 'package:sorting_visualizer/model/SortObserver.dart';
 
-class MergeSort extends SortParentClass {
+class MergeSort extends Sorter{
 
-  late List<SortViewObserver> _obs;
   late int leftIndex, rightIndex;
 
-  MergeSort(int speed) : super(speed)  {
-    _obs = [];
+  MergeSort([int speed=0]) : super(speed)  {
+    obs = [];
     _init();
-  }
-
-  void addObserver(SortViewObserver ob) {
-    this._obs.add(ob);
-  }
-  void removeObserver(SortViewObserver ob) {
-    this._obs.remove(ob);
-  }
-  void clearObservers() {
-    _obs = [];
-  }
-
-  void notifyOutPlaceObservers(List<int> array) {
-    for(SortViewObserver ob in _obs){
-      ob.updateOutPlace(array);
-    }
-  }
-  void notifyInPlaceObservers(List<int> array) {
-    for(SortViewObserver ob in _obs){
-      ob.updateInPlace(array);
-    }
   }
 
   void _init(){
@@ -39,90 +15,70 @@ class MergeSort extends SortParentClass {
   }
 
   @override
-  Future<List<int>> sort(List<int> unsortedArray) async {
-    List<int> temp = unsortedArray.toList(growable: true);
-    List<int> newArray = unsortedArray.toList(growable: true);
-    List<int> sortedArray = await _mergeRecurse(newArray, temp, 0, unsortedArray.length-1);
-    await Future.delayed(Duration(milliseconds: super.speed), () {
-      notifyInPlaceObservers(temp);
-      notifyOutPlaceObservers(List.filled(unsortedArray.length, 0));
-    });
+  Future<List<int>> sort(List<int> inPlaceArray, List<int> outPlaceArray) async {
+    super.isSorting = true;
+    List<int> piArray = inPlaceArray.toList(growable: true);
+    List<int> sortedArray = await _mergeRecurse(piArray, inPlaceArray, outPlaceArray, 0, inPlaceArray.length);
+    await notifyObservers(inPlaceArray.length);
+    await notifyObservers(outPlaceArray.length);
     _init();
+    super.isSorting = false;
     return sortedArray;
   }
 
-  Future<List<int>> _mergeRecurse(List<int> array, List<int> temp, int origLeftIndex, int origRightIndex) async {
+  Future<List<int>> _mergeRecurse(List<int> array, List<int> inPlaceArray, List<int> outPlaceArray, int origLeftIndex, int origRightIndex) async {
     int mid = array.length ~/2;
     // End once single elements reached
-    if(array.length <= 1 || !SortController.instance.isSorting) {
+    if(array.length <= 1 || !super.isSorting) {
       return array;
     }
     // Split  Left
-    List<int> leftArray = await _mergeRecurse(array.sublist(0, mid), temp, origLeftIndex, origLeftIndex + mid );
+    List<int> leftArray = await _mergeRecurse(array.sublist(0, mid), inPlaceArray, outPlaceArray, origLeftIndex, origLeftIndex + mid );
     // Split Right
-    List<int> rightArray = await _mergeRecurse(array.sublist(mid, array.length), temp, origLeftIndex + mid, origRightIndex);
+    List<int> rightArray = await _mergeRecurse(array.sublist(mid, array.length), inPlaceArray, outPlaceArray, origLeftIndex + mid, origRightIndex);
     // Merge
-    List<int> mergedArray = await _merge(leftArray, rightArray, temp, origLeftIndex, origRightIndex);
-    if(origLeftIndex <= origRightIndex) {
-      for(int mInt in mergedArray) {
-        List<int> sList = temp.sublist(origLeftIndex, origRightIndex);
-        if(sList.contains(mInt)) {
-          temp.replaceRange(origLeftIndex, origLeftIndex + mergedArray.length, mergedArray);
-        }
-      }
-    }
-    await Future.delayed(Duration(milliseconds: super.speed), () {
-      notifyInPlaceObservers(temp);
-    });
+    List<int> mergedArray = await _merge(leftArray, rightArray, outPlaceArray, origLeftIndex, origRightIndex);
+
+    inPlaceArray.replaceRange(origLeftIndex, origLeftIndex + mergedArray.length, mergedArray);
+    await notifyObservers(inPlaceArray.length);
     return mergedArray;
   }
 
-  Future<List<int>> _merge(List<int> leftArray, List<int> rightArray, List<int> temp, int origLeftIndex, int origRightIndex) async{
-    if(!SortController.instance.isSorting) {
+  Future<List<int>> _merge(List<int> leftArray, List<int> rightArray, List<int> outPlaceArray, int origLeftIndex, int origRightIndex) async{
+    leftIndex = origLeftIndex;
+    rightIndex = origRightIndex-1;
+    if(!super.isSorting) {
       leftArray.addAll(rightArray);
       return leftArray;
     }
-    temp = List.filled(temp.length, 0, growable: true);
+    outPlaceArray.replaceRange(0, outPlaceArray.length, List.filled(outPlaceArray.length, 0, growable: true));
     List<int> outArray = [];
     int left = 0, right = 0;
     while(left < leftArray.length && right < rightArray.length) {
       if(leftArray[left] < rightArray[right]) {
         outArray.add(leftArray[left]);
-        temp[origLeftIndex + left + right] = leftArray[left];
+        outPlaceArray[origLeftIndex + left + right] = leftArray[left];
         left++;
       }
       else {
         outArray.add(rightArray[right]);
-        temp[origLeftIndex + left + right] = rightArray[right];
+        outPlaceArray[origLeftIndex + left + right] = rightArray[right];
         right++;
       }
-      await Future.delayed(Duration(milliseconds: super.speed), () {
-        leftIndex = origLeftIndex;
-        rightIndex = origRightIndex;
-        notifyOutPlaceObservers(temp);
-      });
+      await notifyObservers(outPlaceArray.length);
     }
     while(left < leftArray.length) {
       outArray.add(leftArray[left]);
-      temp[origLeftIndex + left + right] = leftArray[left];
-      await Future.delayed(Duration(milliseconds: super.speed), () {
-        leftIndex = origLeftIndex;
-        rightIndex = origRightIndex;
-        notifyOutPlaceObservers(temp);
-      });
+      outPlaceArray[origLeftIndex + left + right] = leftArray[left];
+      await notifyObservers(outPlaceArray.length);
       left++;
     }
     while(right < rightArray.length) {
       outArray.add(rightArray[right]);
-      temp[origLeftIndex + left + right] = rightArray[right];
-      await Future.delayed(Duration(milliseconds: super.speed), () {
-        leftIndex = origLeftIndex;
-        rightIndex = origRightIndex;
-        notifyOutPlaceObservers(temp);
-      });
+      outPlaceArray[origLeftIndex + left + right] = rightArray[right];
+      await notifyObservers(outPlaceArray.length);
       right++;
     }
     return outArray;
   }
-
 }

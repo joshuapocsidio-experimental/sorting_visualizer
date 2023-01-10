@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:sorting_visualizer/controller/SortController.dart';
 import 'package:sorting_visualizer/model/SortClass.dart';
 import 'package:sorting_visualizer/model/SortObserver.dart';
 
@@ -11,31 +10,16 @@ enum PivotSelection {
   Random
 }
 
-class QuickSort extends SortParentClass {
+class QuickSort extends Sorter {
   late PivotSelection pivotSelection;
 
-  late List<SortViewObserver> _obs;
+  late List<SortViewObserver> obs;
   late int pivotIndex, left, right;
 
-  QuickSort(int speed) : super(speed)  {
-    _obs = [];
+  QuickSort([int speed=0]) : super(speed)  {
+    obs = [];
     _init();
     pivotSelection = PivotSelection.EndIndex;
-  }
-
-  void addObserver(SortViewObserver ob) {
-    this._obs.add(ob);
-  }
-  void removeObserver(SortViewObserver ob) {
-    this._obs.remove(ob);
-  }
-  void clearObservers() {
-    _obs = [];
-  }
-  void notifyObservers(int left, int right, int pivot) {
-    for(SortViewObserver ob in _obs){
-      ob.refresh();
-    }
   }
 
   void _init() {
@@ -45,14 +29,16 @@ class QuickSort extends SortParentClass {
   }
 
   @override
-  Future<List<int>> sort(List<int> unsortedArray) async {
-    await _quickRecurse(unsortedArray, 0, unsortedArray.length-1);
+  Future<List<int>> sort(List<int> inPlaceArray, List<int> outPlaceArray) async {
+    super.isSorting = true;
+    await _quickRecurse(inPlaceArray, 0, inPlaceArray.length-1);
     _init();
-    return unsortedArray;
+    super.isSorting = false;
+    return inPlaceArray;
   }
 
   Future<void> _quickRecurse(List<int> array, int startIndex, int endIndex) async {
-    if(array.isEmpty || !SortController.instance.isSorting) {
+    if(array.isEmpty || !super.isSorting) {
       return;
     }
     if(startIndex >= array.length || endIndex <= 0) {
@@ -112,32 +98,26 @@ class QuickSort extends SortParentClass {
     if(leftIndex > rightIndex) {
       return;
     }
-    while(leftIndex <= rightIndex && SortController.instance.isSorting) {
-      while(leftIndex <= rightIndex && array[leftIndex] <= pivot && SortController.instance.isSorting) {
+    while(leftIndex <= rightIndex && super.isSorting) {
+      while(leftIndex <= rightIndex && array[leftIndex] <= pivot && super.isSorting) {
         leftIndex++;
-        await Future.delayed(Duration(milliseconds: super.speed), () {
-          left = leftIndex;
-          right = rightIndex;
-          notifyObservers(leftIndex, rightIndex, pivotIndex);
-        });
+        left = leftIndex;
+        right = rightIndex;
+        await notifyObservers(array.length);
       }
-      while(leftIndex <= rightIndex && array[rightIndex] >= pivot && SortController.instance.isSorting) {
+      while(leftIndex <= rightIndex && array[rightIndex] >= pivot && super.isSorting) {
         rightIndex--;
-        await Future.delayed(Duration(milliseconds: super.speed), () {
-          left = leftIndex;
-          right = rightIndex;
-          notifyObservers(leftIndex, rightIndex, pivotIndex);
-        });
+        left = leftIndex;
+        right = rightIndex;
+        await notifyObservers(array.length);
       }
       if(leftIndex < rightIndex) {
         _swap(array, leftIndex, rightIndex);
         leftIndex++;
         rightIndex--;
-        await Future.delayed(Duration(milliseconds: super.speed), () {
-          left = leftIndex;
-          right = rightIndex;
-          notifyObservers(leftIndex, rightIndex, pivotIndex);
-        });
+        left = leftIndex;
+        right = rightIndex;
+        await notifyObservers(array.length);
       }
     }
     // Swap back
@@ -156,15 +136,12 @@ class QuickSort extends SortParentClass {
         break;
     }
     _swap(array, swapIndex, pivotIndex);
-    await Future.delayed(Duration(milliseconds: super.speed), () {
-      left = leftIndex;
-      right = rightIndex;
-      notifyObservers(leftIndex, rightIndex, pivotIndex);
-    });
+    left = leftIndex;
+    right = rightIndex;
+    await notifyObservers(array.length);
 
     int pi;
     switch(pivotSelection) {
-
       case PivotSelection.StartIndex:
         pi = rightIndex;
         await _quickRecurse(array, pi+1, endIndex);
@@ -186,13 +163,10 @@ class QuickSort extends SortParentClass {
         await _quickRecurse(array, pi+1, endIndex);
         break;
     }
-    if(pivotSelection == PivotSelection.StartIndex){
-    }
-    else {
-    }
   }
 
   void _swap(List<int> array, int firstIndex, int secondIndex) {
+    print("Swap");
     int temp = array[firstIndex];
     array[firstIndex] = array[secondIndex];
     array[secondIndex] = temp;

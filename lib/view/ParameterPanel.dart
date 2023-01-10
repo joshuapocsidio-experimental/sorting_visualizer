@@ -19,7 +19,6 @@ class _ParameterPanelState extends State<ParameterPanel> {
   bool submitEnable = true;
   bool showOriginal = true;
   bool showOutPlaceArray = true;
-  late PivotSelection quickSortPivotSelection;
 
   late String _speedMode;
   late int _arraySize;
@@ -135,10 +134,6 @@ class _ParameterPanelState extends State<ParameterPanel> {
             ),
           ]);
           break;
-          break;
-        case SortChoice.All:
-          // TODO: Handle this case.
-          break;
       }
 
     });
@@ -190,7 +185,6 @@ class _ParameterPanelState extends State<ParameterPanel> {
     _arraySizeController.text = _arraySize.toString();
     _speedMode = "Normal";
     SortController.instance.changeSpeed(SortSpeed.Normal);
-    quickSortPivotSelection = SortController.instance.quickSorter.pivotSelection;
   }
 
   @override
@@ -315,7 +309,7 @@ class _ParameterPanelState extends State<ParameterPanel> {
                   isModifiable = true;
                 });
               },
-              enable: !SortController.instance.isSorting,
+              enable: !SortController.instance.checkIfSorting(),
               label: 'Modify'
             ),
             SizedBox(height: 10),
@@ -371,40 +365,42 @@ class _ParameterPanelState extends State<ParameterPanel> {
                 RadioListTile(
                   title: Text("Start Index"),
                   value: PivotSelection.StartIndex,
-                  groupValue: SortController.instance.quickSorter.pivotSelection,
+//                  groupValue: SortController.instance.quickSorter.pivotSelection,,
+                  groupValue: (SortController.instance.getSorter() as QuickSort).pivotSelection,
                   onChanged: (pivotSelectionChoice){
                     setState(() {
-                      SortController.instance.quickSorter.pivotSelection = pivotSelectionChoice as PivotSelection;
+                      (SortController.instance.getSorter() as QuickSort).pivotSelection = pivotSelectionChoice as PivotSelection;
+//                      SortController.instance.quickSorter.pivotSelection = pivotSelectionChoice as PivotSelection;
                     });
                   },
                 ),
                 RadioListTile(
                   title: Text("End Index"),
                   value: PivotSelection.EndIndex,
-                  groupValue: SortController.instance.quickSorter.pivotSelection,
+                  groupValue: (SortController.instance.getSorter() as QuickSort).pivotSelection,
                   onChanged: (pivotSelectionChoice){
                     setState(() {
-                      SortController.instance.quickSorter.pivotSelection = pivotSelectionChoice as PivotSelection;
+                      (SortController.instance.getSorter() as QuickSort).pivotSelection = pivotSelectionChoice as PivotSelection;
                     });
                   },
                 ),
                 RadioListTile(
                   title: Text("Random Index"),
                   value: PivotSelection.Random,
-                  groupValue: SortController.instance.quickSorter.pivotSelection,
+                  groupValue: (SortController.instance.getSorter() as QuickSort).pivotSelection,
                   onChanged: (pivotSelectionChoice){
                     setState(() {
-                      SortController.instance.quickSorter.pivotSelection = pivotSelectionChoice as PivotSelection;
+                      (SortController.instance.getSorter() as QuickSort).pivotSelection = pivotSelectionChoice as PivotSelection;
                     });
                   },
                 ),
                 RadioListTile(
                   title: Text("Median of Three Index"),
                   value: PivotSelection.MedianOf3,
-                  groupValue: SortController.instance.quickSorter.pivotSelection,
+                  groupValue: (SortController.instance.getSorter() as QuickSort).pivotSelection,
                   onChanged: (pivotSelectionChoice){
                     setState(() {
-                      SortController.instance.quickSorter.pivotSelection = pivotSelectionChoice as PivotSelection;
+                      (SortController.instance.getSorter() as QuickSort).pivotSelection = pivotSelectionChoice as PivotSelection;
                     });
                   },
                 ),

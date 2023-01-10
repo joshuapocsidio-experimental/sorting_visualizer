@@ -1,31 +1,15 @@
-import 'package:sorting_visualizer/controller/SortController.dart';
 import 'package:sorting_visualizer/model/SortClass.dart';
 import 'package:sorting_visualizer/model/SortObserver.dart';
 
-class BubbleSort extends SortParentClass {
+class BubbleSort extends Sorter {
 
-  late List<SortViewObserver> _obs;
+  late List<SortViewObserver> obs;
   late int aIndex, bIndex;
   late List<int> sortedIndices;
 
-  BubbleSort(int speed) : super(speed) {
-    _obs = [];
+  BubbleSort([int speed=0]) : super(speed) {
+    obs = [];
     _init();
-  }
-
-  void addObserver(SortViewObserver ob) {
-    this._obs.add(ob);
-  }
-  void removeObserver(SortViewObserver ob) {
-    this._obs.remove(ob);
-  }
-  void clearObservers() {
-    _obs = [];
-  }
-  void notifyObservers() {
-    for(SortViewObserver ob in _obs){
-      ob.refresh();
-    }
   }
 
   void _init() {
@@ -35,34 +19,31 @@ class BubbleSort extends SortParentClass {
   }
 
   @override
-  Future<List<int>> sort(List<int> unsortedArray) async {
+  Future<List<int>> sort(List<int> inPlaceArray, List<int> outPlaceArray) async {
     int numSwaps;
-    int sortedIndex = unsortedArray.length;
+    int sortedIndex = inPlaceArray.length;
+    super.isSorting = true;
 
     do {
       numSwaps = 0;
-      for(int i = 0; i < sortedIndex - 1 && SortController.instance.isSorting; i++) {
-        if(unsortedArray[i] > unsortedArray[i+1]) {
-          int temp = unsortedArray[i+1];
-          unsortedArray[i+1] = unsortedArray[i];
-          unsortedArray[i] = temp;
+      for(int i = 0; i < sortedIndex - 1 && super.isSorting; i++) {
+        aIndex = i;
+        bIndex = i+1;
+        await notifyObservers(inPlaceArray.length);
+        if(inPlaceArray[i] > inPlaceArray[i+1]) {
+          int temp = inPlaceArray[i+1];
+          inPlaceArray[i+1] = inPlaceArray[i];
+          inPlaceArray[i] = temp;
           numSwaps++;
+          await notifyObservers(inPlaceArray.length);
         }
-        await Future.delayed(Duration(milliseconds: super.speed), () {
-          aIndex = i;
-          bIndex = i+1;
-          notifyObservers();
-        });
       }
       sortedIndex--;
-      await Future.delayed(Duration(milliseconds: super.speed * 3), () {
-        if(sortedIndices.contains(sortedIndex) == false) {
-          sortedIndices.add(sortedIndex);
-        }
-        notifyObservers();
-      });
+      sortedIndices.add(sortedIndex);
+      await notifyObservers(inPlaceArray.length);
     } while(numSwaps != 0);
     _init();
-    return unsortedArray;
+    super.isSorting = false;
+    return inPlaceArray;
   }
 }

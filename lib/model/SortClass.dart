@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+import 'dart:math';
 import 'package:sorting_visualizer/model/SortObserver.dart';
 
 enum SortType {
@@ -18,30 +18,39 @@ enum SortSpeed {
   Instant,
 }
 
+abstract class SortAlgorithm {
+  Future<List<int>> sort(List<int> inPlaceArray, List<int> outPlaceArray);
+}
 
-abstract class SortParentClass {
-  String name = "base";
+abstract class Sorter implements SortAlgorithm{
+  late List<SortViewObserver> obs;
   bool isSorting = false;
   late int speed;
-
-  Future<List<int>> sort(List<int> unsortedArray);
 
   void stop() {
     this.isSorting = false;
   }
 
-  SortParentClass(int initSpeed) {
+  void addObserver(SortViewObserver ob) {
+    this.obs.add(ob);
+  }
+  void removeObserver(SortViewObserver ob) {
+    this.obs.remove(ob);
+  }
+  void clearObservers() {
+    obs = [];
+  }
+  Future<void> notifyObservers(int dataSize) async {
+    for(SortViewObserver ob in obs){
+      ob.refresh();
+    }
+    await Future.delayed(Duration(milliseconds: speed * log(dataSize).toInt()));
+  }
+  Sorter(int initSpeed) {
     speed = initSpeed;
+    obs = [];
   }
 
-  Future<bool> isSorted(List<int> array) async {
-    for(int i = 1; i < array.length; i++){
-      if(array[i] < array[i-1]) {
-        return false;
-      }
-    }
-    return true;
-  }
 
 }
 
